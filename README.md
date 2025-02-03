@@ -47,7 +47,4 @@ FixLag removed the following entities:
 
 ## Configuration
 No configuration is required; the plugin works out of the box.
-
-## Support
-For support or feature requests, contact the plugin developer at `github.com/Earth1283`.
-
+In fact, because of how bad I am at developing plugins, I can't even make a config file that has content, so I just dropped it.
