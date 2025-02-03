@@ -1,0 +1,17 @@
+name: FixLag
+version: 1.0
+main: io.github.Earth1283.fixLag.FixLag
+author: Earth1283
+description: A simple plugin to reduce lag by removing unwanted entities.
+commands:
+  fixlag:
+    description: Clears specified entities to help reduce server lag.
+    permission: fixlag.clear
+    usage: /fixlag
+permissions:
+  fixlag.clear:
+    description: Allows the player to use the /fixlag command
+    default: op
+  fixlag.notify:
+    description: Allows the player to be notified when entities are removed (optional, no longer necessary)
+    default: op
