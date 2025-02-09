@@ -1,9 +1,9 @@
-# Time in seconds before entities are cleared (default: 300 seconds)
+# Time in seconds before entities are cleared in seconds (default: 300)
 cleanup-interval: 300
 
-# Entity limits before sending a warning
+# Entity limits before sending a warning to those with a permission
 entity-thresholds:
   villagers: 50
-  items: 100
+  items: 90
   primed-tnt: 75
-  minecarts: 10
+  minecarts: 15
