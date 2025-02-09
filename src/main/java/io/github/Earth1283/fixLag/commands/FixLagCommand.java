@@ -17,10 +17,12 @@ public class FixLagCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        // If the sender is a player
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            // Only allow OPs to run this command
-            if (player.isOp()) {
+
+            // Check if the player has the 'fixlag.command' permission node
+            if (player.hasPermission("fixlag.command")) {
                 cleanupTask.clearEntities();  // Run the cleanup manually
                 player.sendMessage("§a[FixLag] §bManually triggered entity cleanup.");
                 return true;
@@ -29,6 +31,7 @@ public class FixLagCommand implements CommandExecutor {
                 return false;
             }
         } else {
+            // Console can always run the command
             cleanupTask.clearEntities();
             Bukkit.getConsoleSender().sendMessage("§a[FixLag] §bManually triggered entity cleanup.");
             return true;
