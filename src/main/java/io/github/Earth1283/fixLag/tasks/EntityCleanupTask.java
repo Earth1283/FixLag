@@ -169,7 +169,7 @@ public class EntityCleanupTask implements Runnable {
                 totalEntitiesCleared += removeEntities(world, Snowball.class);
             }
 
-            String broadcastMessage = "&a[FixLag] &bCleared " + totalEntitiesCleared + " entities (including arrows & snowballs)!";
+            String broadcastMessage = "&a[FixLag] &bCleared " + totalEntitiesCleared + " entities!";
             Bukkit.getServer().broadcast(LegacyComponentSerializer.legacyAmpersand().deserialize(broadcastMessage));
         });
     }
