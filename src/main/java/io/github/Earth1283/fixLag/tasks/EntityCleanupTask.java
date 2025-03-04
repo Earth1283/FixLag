@@ -3,14 +3,19 @@
 package io.github.Earth1283.fixLag.tasks;
 
 import io.github.Earth1283.fixLag.FixLag;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.entity.*;
 import org.bukkit.Location;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class EntityCleanupTask implements Runnable {
 
@@ -22,6 +27,8 @@ public class EntityCleanupTask implements Runnable {
     private final int snowballThreshold;
     private final int cleanupInterval;
     private final int warningRefreshInterval;
+    private final double clusterRadius; // Using radius for cluster check
+    private final int clusterThreshold; // Using threshold for cluster check
 
     private int totalEntitiesCleared = 0;
 
@@ -34,6 +41,9 @@ public class EntityCleanupTask implements Runnable {
         this.tntThreshold = plugin.getConfig().getInt("entity-thresholds.primed-tnt", 75);
         this.minecartThreshold = plugin.getConfig().getInt("entity-thresholds.minecarts", 10);
         this.snowballThreshold = plugin.getConfig().getInt("entity-thresholds.snowballs", 50);
+        this.clusterRadius = 4.0; // Radius for entity cluster check, set to 4 as per your code, and making it configurable if needed.
+        this.clusterThreshold = minecartThreshold; // Threshold for entity cluster, currently using minecartThreshold as a placeholder, configure if needed.
+
 
         // Schedule warning refresh separately
         startWarningRefreshTask();
@@ -50,11 +60,17 @@ public class EntityCleanupTask implements Runnable {
     }
 
     private void notifyPlayers() {
-        Bukkit.getScheduler().runTaskLater(plugin, () -> Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a[FixLag] &bEntity cleanup in 3 minutes!")), (cleanupInterval - 180) * 20L);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a[FixLag] &bEntity cleanup in 1 minute!")), (cleanupInterval - 60) * 20L);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a[FixLag] &bEntity cleanup in 30 seconds!")), (cleanupInterval - 30) * 20L);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a[FixLag] &bEntity cleanup in 10 seconds!")), (cleanupInterval - 10) * 20L);
+        int[] warningTimes = {180, 60, 30, 10}; // Warning times in seconds
+        for (int time : warningTimes) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> broadcastCleanupMessage(time), (cleanupInterval - time) * 20L);
+        }
     }
+
+    private void broadcastCleanupMessage(int time) {
+        String message = "&a[FixLag] &bEntity cleanup in " + (time >= 60 ? time / 60 + " minute" + (time >= 120 ? "s" : "") : time + " seconds") + "!";
+        Bukkit.getServer().broadcast(LegacyComponentSerializer.legacyAmpersand().deserialize(message));
+    }
+
 
     private void checkEntityThresholds() {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -68,31 +84,23 @@ public class EntityCleanupTask implements Runnable {
                 entityCounts.put("tnt", countEntities(world, TNTPrimed.class));
 
                 // Check for clustered minecarts and snowballs
-                minecartOverloadLocations.addAll(checkEntityClusters(world, Minecart.class, minecartThreshold, 4));
-                snowballOverloadLocations.addAll(checkEntityClusters(world, Snowball.class, snowballThreshold, 4));
+                minecartOverloadLocations.addAll(checkEntityClusters(world, Minecart.class));
+                snowballOverloadLocations.addAll(checkEntityClusters(world, Snowball.class));
             }
 
             Bukkit.getScheduler().runTask(plugin, () -> notifyWarning(entityCounts, minecartOverloadLocations, snowballOverloadLocations));
         });
     }
 
-    private List<String> checkEntityClusters(World world, Class<? extends Entity> entityType, int threshold, double radius) {
+    private List<String> checkEntityClusters(World world, Class<? extends Entity> entityType) {
         List<String> overloadLocations = new ArrayList<>();
 
         for (Chunk chunk : world.getLoadedChunks()) {
-            Entity[] entitiesArray = chunk.getEntities();  // Get an array of entities in the chunk
-
-            // Convert the array to a List<Entity> (which is a Collection<Entity>)
-            Collection<Entity> entities = Arrays.asList(entitiesArray);
-
-            for (Entity entity : entities) {
+            for (Entity entity : chunk.getEntities()) {
                 if (entityType.isInstance(entity)) {
-                    Location loc = entity.getLocation();  // Get the Location of the entity
-                    int blockX = loc.getBlockX();         // Get the X coordinate
-                    int blockY = loc.getBlockY();         // Get the Y coordinate
-                    int blockZ = loc.getBlockZ();         // Get the Z coordinate
-
-                    overloadLocations.add(world.getName() + " [" + blockX + ", " + blockY + ", " + blockZ + "]");  // Add the location to the list
+                    if (countNearbyEntities(entity, entityType, clusterRadius) > clusterThreshold) { // Using configured radius and threshold
+                        overloadLocations.add(formatLocation(world.getName(), entity.getLocation()));
+                    }
                 }
             }
         }
@@ -102,7 +110,7 @@ public class EntityCleanupTask implements Runnable {
     private <T extends Entity> int countNearbyEntities(Entity center, Class<T> entityType, double radius) {
         int count = 0;
         for (Entity entity : center.getNearbyEntities(radius, radius, radius)) {
-            if (entityType.isInstance(entity)) {
+            if (entityType.isInstance(entity) && entity != center) { // Exclude the center entity itself
                 count++;
             }
         }
@@ -110,42 +118,43 @@ public class EntityCleanupTask implements Runnable {
     }
 
     private void notifyWarning(Map<String, Integer> entityCounts, List<String> minecartOverloadLocations, List<String> snowballOverloadLocations) {
-        StringBuilder warningMessage = new StringBuilder(ChatColor.translateAlternateColorCodes('&', "&c[FixLag] &bWarning: Entity load threshold exceeded! "));
+        StringBuilder warningMessage = new StringBuilder(LegacyComponentSerializer.legacyAmpersand().deserialize("&c[FixLag] &bWarning: Entity load threshold exceeded! ").content()); // Use Adventure Component for base message
 
-        if (entityCounts.get("villagers") > villagerThreshold) warningMessage.append("&cMore than ").append(villagerThreshold).append(" Villagers loaded! ");
-        if (entityCounts.get("items") > itemThreshold) warningMessage.append("&cMore than ").append(itemThreshold).append(" Items loaded! ");
-        if (entityCounts.get("tnt") > tntThreshold) warningMessage.append("&cMore than ").append(tntThreshold).append(" TNT primed loaded! ");
+        if (entityCounts.get("villagers") > villagerThreshold) warningMessage.append(LegacyComponentSerializer.legacyAmpersand().deserialize("&cMore than ").content()).append(villagerThreshold).append(LegacyComponentSerializer.legacyAmpersand().deserialize(" Villagers loaded! ").content());
+        if (entityCounts.get("items") > itemThreshold) warningMessage.append(LegacyComponentSerializer.legacyAmpersand().deserialize("&cMore than ").content()).append(itemThreshold).append(LegacyComponentSerializer.legacyAmpersand().deserialize(" Items loaded! ").content());
+        if (entityCounts.get("tnt") > tntThreshold) warningMessage.append(LegacyComponentSerializer.legacyAmpersand().deserialize("&cMore than ").content()).append(tntThreshold).append(LegacyComponentSerializer.legacyAmpersand().deserialize(" TNT primed loaded! ").content());
 
         if (!minecartOverloadLocations.isEmpty()) {
-            warningMessage.append("&cMinecart overload detected at: ");
+            warningMessage.append(LegacyComponentSerializer.legacyAmpersand().deserialize("&cMinecart overload detected at: ").content());
             for (String loc : minecartOverloadLocations) {
                 warningMessage.append("\n  - ").append(loc);
             }
         }
 
         if (!snowballOverloadLocations.isEmpty()) {
-            warningMessage.append("&cSnowball overload detected at: ");
+            warningMessage.append(LegacyComponentSerializer.legacyAmpersand().deserialize("&cSnowball overload detected at: ").content());
             for (String loc : snowballOverloadLocations) {
                 warningMessage.append("\n  - ").append(loc);
             }
         }
 
+        Component finalWarningMessage = LegacyComponentSerializer.legacySection().deserialize(warningMessage.toString()); // Deserialize the complete message once
+
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.hasPermission("fixlag.warning")) player.sendMessage(warningMessage.toString());
+            if (player.hasPermission("fixlag.warning")) player.sendMessage(finalWarningMessage); // Use sendMessage(Component)
         }
     }
 
     private <T extends Entity> int countEntities(World world, Class<T> entityType) {
-        Collection<T> entities = new ArrayList<>();
+        int count = 0;
         for (Chunk chunk : world.getLoadedChunks()) {
-            // Get all entities in the chunk
             for (Entity entity : chunk.getEntities()) {
                 if (entityType.isInstance(entity)) {
-                    entities.add(entityType.cast(entity));  // Safely cast to the desired type
+                    count++;
                 }
             }
         }
-        return entities.size();
+        return count;
     }
 
     public void clearEntities() {
@@ -160,27 +169,30 @@ public class EntityCleanupTask implements Runnable {
                 totalEntitiesCleared += removeEntities(world, Snowball.class);
             }
 
-            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&a[FixLag] &bCleared " + totalEntitiesCleared + " entities (including arrows & snowballs)!"));
+            String broadcastMessage = "&a[FixLag] &bCleared " + totalEntitiesCleared + " entities (including arrows & snowballs)!";
+            Bukkit.getServer().broadcast(LegacyComponentSerializer.legacyAmpersand().deserialize(broadcastMessage));
         });
     }
 
     private <T extends Entity> int removeEntities(World world, Class<T> entityType) {
-        Collection<T> entities = new ArrayList<>();
+        List<Entity> entitiesToRemove = new ArrayList<>();
         for (Chunk chunk : world.getLoadedChunks()) {
             for (Entity entity : chunk.getEntities()) {
                 if (entityType.isInstance(entity)) {
-                    entities.add(entityType.cast(entity)); // Add to the collection
+                    entitiesToRemove.add(entity);
                 }
             }
         }
 
         int removed = 0;
-        for (T entity : entities) {
-            if (entity instanceof Entity) {
-                entity.remove();
-                removed++;
-            }
+        for (Entity entity : entitiesToRemove) {
+            entity.remove();
+            removed++;
         }
         return removed;
+    }
+
+    private String formatLocation(String worldName, Location loc) {
+        return worldName + " [" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + "]";
     }
 }
