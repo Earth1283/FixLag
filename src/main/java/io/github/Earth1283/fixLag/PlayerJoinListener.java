@@ -1,10 +1,9 @@
 package io.github.Earth1283.fixLag;
 
-import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.entity.Player;
+import org.bukkit.ChatColor;
 
 public class PlayerJoinListener implements Listener {
 
@@ -13,12 +12,12 @@ public class PlayerJoinListener implements Listener {
     public PlayerJoinListener(FixLag plugin) {
         this.plugin = plugin;
     }
-// Nag admins to update
+// Nag them to update
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        if (player.isOp() && plugin.isUpdateAvailable()) {
-            player.sendMessage(ChatColor.RED + "[FixLag] A new update is available! Get the latest version at: https://modrinth.com/plugin/fixlag");
+        if (plugin.isUpdateAvailable()) {
+            event.getPlayer().sendMessage(ChatColor.RED + "[FixLag] A new version of FixLag is available!");
+            event.getPlayer().sendMessage(ChatColor.YELLOW + "Download the latest version here: https://modrinth.com/plugin/fixlag");
         }
     }
 }

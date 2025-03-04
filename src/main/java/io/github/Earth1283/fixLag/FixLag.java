@@ -14,8 +14,9 @@ import java.net.URL;
 
 public class FixLag extends JavaPlugin {
 
+    // Get latest version
     private static final String LATEST_VERSION_URL = "https://raw.githubusercontent.com/Earth1283/FixLag/main/latest_version.txt";
-
+    // someone help me i walys forget this XD
     @Override
     public void onEnable() {
         // Initialize the cleanup task
@@ -28,11 +29,14 @@ public class FixLag extends JavaPlugin {
         // Load the configuration
         saveDefaultConfig();
 
-        // Run the update checker on startup
+        // Run the update checker asynchronously
         checkForUpdates();
 
-        // Start the entity cleanup task to run at intervals
+        // Start the entity cleanup task
         startCleanupTask(cleanupTask);
+
+        // Notify OPs of updates when they join
+        Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(this), this);
     }
 
     @Override
@@ -42,39 +46,43 @@ public class FixLag extends JavaPlugin {
 
     private void startCleanupTask(EntityCleanupTask cleanupTask) {
         int interval = getConfig().getInt("cleanup-interval", 300);
-        Bukkit.getScheduler().runTaskTimer(this, cleanupTask, 0L, interval * 20L); // Run periodically
+        // Correct scheduling method for periodic execution
+        Bukkit.getScheduler().runTaskTimer(this, cleanupTask, 0L, interval * 20L);
     }
 
     private void checkForUpdates() {
-        Bukkit.getScheduler().runTask(this, () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             String currentVersion = getDescription().getVersion();
             String latestVersion = fetchLatestVersion();
 
             if (latestVersion != null && !currentVersion.equals(latestVersion)) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] Your plugin version (" + currentVersion + ") is outdated!");
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] Please update to the latest version: https://modrinth.com/plugin/fixlag");
+                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] A new version (" + latestVersion + ") is available! You're running version " + currentVersion + ".");
+                Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[FixLag] Download the latest version here: https://modrinth.com/plugin/fixlag");
             }
         });
     }
 
     private String fetchLatestVersion() {
-        StringBuilder result = new StringBuilder();
         try {
             HttpURLConnection connection = (HttpURLConnection) new URL(LATEST_VERSION_URL).openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line);
-            }
+            String latestVersion = reader.readLine();
             reader.close();
+
+            return latestVersion != null ? latestVersion.trim() : null;
         } catch (Exception e) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] Unable to check for updates due to an error: " + e.getMessage());
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] Unable to check for updates: " + e.getMessage());
             return null;
         }
+    }
 
-        return result.toString().trim();
+    public boolean isUpdateAvailable() {
+        String currentVersion = getDescription().getVersion();
+        String latestVersion = fetchLatestVersion();
+        return latestVersion != null && !currentVersion.equals(latestVersion);
     }
 }

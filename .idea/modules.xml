@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/FixLag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/FixLag.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/io.github.Earth1283.FixLag.main.iml" filepath="$PROJECT_DIR$/.idea/modules/io.github.Earth1283.FixLag.main.iml" />
     </modules>
   </component>
 </project>
