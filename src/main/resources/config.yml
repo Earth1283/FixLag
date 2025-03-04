@@ -1,3 +1,9 @@
+# Welcome to config.yml
+
+# This is where you can optimize the settings
+
+# Tutorials & guides for ideal values are stored here before I get a wiki page
+
 # Time in seconds before entities are cleared (default: 300 seconds, or 5 minutes)
 cleanup-interval: 300
 
