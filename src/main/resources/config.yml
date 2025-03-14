@@ -6,6 +6,7 @@ entity_cleanup:
   mob_cleanup_types:
     - ZOMBIE
     - SKELETON
+    - ITEM
     - CREEPER
   clean_all_entities: false # Set to true if you want to remove all entities, not just mobs
 

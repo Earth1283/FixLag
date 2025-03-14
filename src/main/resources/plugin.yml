@@ -1,22 +1,20 @@
 name: FixLag
-version: 2.6.2
+version: 3.0
 main: io.github.Earth1283.fixLag.FixLag
 api-version: 1.19
 author: Earth1283
-description: Easily clear and manage sources of lag in your server with minimal performance impact!
+description: Fixlag just got a major refactor/rework. Please report any bugs to the github issue thread
 commands:
   fixlag:
-    description: Manually remove entities
+    description: Fix lag on the server by cleaning up entities. Configure in config.yml
     usage: /fixlag
-    permission: fixlag.command
-  ignorewarning:
-    description: Toggle TPS warning visibility.
-    usage: /ignorewarning <on|off>
+  stats:
+    description: Show server stats.
+    usage: /stats
 permissions:
-  fixlag.command:
+  fixlag.use:
+    description: Allows the player to use the /fixlag command
     default: op
-  fixlag.warning:
-    default: op
-  fixlag.tpswarn:
-    description: Allows the player to receive TPS warnings in the action bar.
+  stats.use:
+    description: Allows the player to view server stats
     default: op
