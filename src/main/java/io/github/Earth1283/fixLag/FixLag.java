@@ -1,88 +1,69 @@
 package io.github.Earth1283.fixLag;
 
-import io.github.Earth1283.fixLag.commands.FixLagCommand;
-import io.github.Earth1283.fixLag.tasks.EntityCleanupTask;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import io.github.Earth1283.fixLag.Commands;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 
 public class FixLag extends JavaPlugin {
 
-    // Get latest version
-    private static final String LATEST_VERSION_URL = "https://raw.githubusercontent.com/Earth1283/FixLag/main/latest_version.txt";
-    // someone help me i walys forget this XD
+    private static FixLag instance;
+
     @Override
     public void onEnable() {
-        // Initialize the cleanup task
-        EntityCleanupTask cleanupTask = new EntityCleanupTask(this);
+        instance = this;
 
-        // Register the FixLag command with the cleanup task
-        CommandExecutor fixLagCommandExecutor = new FixLagCommand(cleanupTask);
-        getCommand("fixlag").setExecutor(fixLagCommandExecutor);
+        // Register commands
+        getCommand("fixlag").setExecutor(new Commands());
+        getCommand("stats").setExecutor(new Commands());
 
-        // Load the configuration
+        // Initialize entity cleanup task
+        if (getConfig().getBoolean("entity_cleanup.enabled")) {
+            new EntityCleaner().startCleanupTask();
+        }
+
+        // Version check
+        if (getConfig().getBoolean("update_check.enabled")) {
+            checkForUpdate();
+        }
+
+        // Save default config if not already present
         saveDefaultConfig();
-
-        // Run the update checker asynchronously
-        checkForUpdates();
-
-        // Start the entity cleanup task
-        startCleanupTask(cleanupTask);
-
-        // Notify OPs of updates when they join
-        Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(this), this);
     }
 
-    @Override
-    public void onDisable() {
-        // No specific cleanup tasks required on disable
+    public static FixLag getInstance() {
+        return instance;
     }
 
-    private void startCleanupTask(EntityCleanupTask cleanupTask) {
-        int interval = getConfig().getInt("cleanup-interval", 300);
-        // Correct scheduling method for periodic execution
-        Bukkit.getScheduler().runTaskTimer(this, cleanupTask, 0L, interval * 20L);
-    }
+    private void checkForUpdate() {
+        getServer().getScheduler().runTask(this, () -> {
+            try {
+                String latestVersion = fetchLatestVersion();
+                String currentVersion = getDescription().getVersion();
 
-    private void checkForUpdates() {
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            String currentVersion = getDescription().getVersion();
-            String latestVersion = fetchLatestVersion();
-
-            if (latestVersion != null && !currentVersion.equals(latestVersion)) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] A new version (" + latestVersion + ") is available! You're running version " + currentVersion + ".");
-                Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[FixLag] Download the latest version here: https://modrinth.com/plugin/fixlag");
+                if (!currentVersion.equals(latestVersion)) {
+                    getLogger().warning("A new version of FixLag is available! Current version: " + currentVersion + ", Latest version: " + latestVersion);
+                } else {
+                    getLogger().info("FixLag is up-to-date!");
+                }
+            } catch (Exception e) {
+                getLogger().warning("Failed to check for plugin updates.");
             }
         });
     }
 
-    private String fetchLatestVersion() {
-        try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(LATEST_VERSION_URL).openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
+    private String fetchLatestVersion() throws Exception {
+        URL url = new URL("https://raw.githubusercontent.com/Earth1283/FixLag/main/latest_version.txt");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String latestVersion = reader.readLine();
-            reader.close();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String latestVersion = reader.readLine();
+        reader.close();
 
-            return latestVersion != null ? latestVersion.trim() : null;
-        } catch (Exception e) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[FixLag] Unable to check for updates: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public boolean isUpdateAvailable() {
-        String currentVersion = getDescription().getVersion();
-        String latestVersion = fetchLatestVersion();
-        return latestVersion != null && !currentVersion.equals(latestVersion);
+        return latestVersion;
     }
 }

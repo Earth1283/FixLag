@@ -1,20 +1,19 @@
-# Welcome to config.yml
+# Configuration for FixLag plugin
+entity_cleanup:
+  enabled: true
+  max_entities_per_chunk: 100
+  cleanup_interval: 600 # In ticks, 600 ticks = 30 seconds
+  mob_cleanup_types:
+    - ZOMBIE
+    - SKELETON
+    - CREEPER
+  clean_all_entities: false # Set to true if you want to remove all entities, not just mobs
 
-# This is where you can optimize the settings
+server_stats:
+  enabled: true
+  show_memory_usage: true
+  show_entity_count: true
+  show_tick_rate: true
 
-# Tutorials & guides for ideal values are stored here before I get a wiki page
-
-# Time in seconds before entities are cleared (default: 300 seconds, or 5 minutes)
-cleanup-interval: 300
-
-# Time in seconds before entity warnings refresh (default: 30 seconds)
-warning-refresh-interval: 30
-
-# Entity limits before sending a warning
-# These entities are counted when
-entity-thresholds:
-  villagers: 50
-  items: 100
-  primed-tnt: 75
-  snowballs: 50
-  minecarts: 10
+update_check:
+  enabled: true # Set to true to enable automatic version check
