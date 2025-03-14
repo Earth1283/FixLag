@@ -7,7 +7,6 @@ import org.bukkit.World;
 import org.bukkit.Chunk;
 
 import java.util.List;
-import java.util.Arrays;
 
 public class EntityCleaner {
 
