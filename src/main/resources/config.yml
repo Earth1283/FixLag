@@ -3,7 +3,7 @@ entity_cleanup:
   enabled: true
   max_entities_per_chunk: 100
   cleanup_interval: 600 # In ticks, 600 ticks = 30 seconds
-  mob_cleanup_types:
+  mob_cleanup_types: # Specify the entities to clean up
     - ZOMBIE
     - SKELETON
     - ITEM
