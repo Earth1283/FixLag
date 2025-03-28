@@ -1,20 +1,20 @@
 name: FixLag
 version: 3.0
 main: io.github.Earth1283.fixLag.FixLag
-api-version: 1.19
+api-version: 1.17
 author: Earth1283
-description: Fixlag just got a major refactor/rework. Please report any bugs to the github issue thread
+description: Regularly deletes specified entities to reduce lag to make server owners' lives easier
+permissions:
+  fixlag.overload.exempt:
+    description: Players with this permission will not trigger overload warnings.
+    default: false
+  fixlag.overload.notify:
+    description: Players with this permission will receive overload notifications.
+    default: op
+  fixlag.command:
+    description: Allows players to use the /fixlag command.
+    default: op
 commands:
   fixlag:
-    description: Fix lag on the server by cleaning up entities. Configure in config.yml
-    usage: /fixlag
-  stats:
-    description: Show server stats.
-    usage: /stats
-permissions:
-  fixlag.use:
-    description: Allows the player to use the /fixlag command
-    default: op
-  stats.use:
-    description: Allows the player to view server stats
-    default: op
+    description: Manually triggers the entity deletion.
+    permission: fixlag.command

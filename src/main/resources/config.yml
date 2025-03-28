@@ -1,20 +1,36 @@
-# Configuration for FixLag plugin
-entity_cleanup:
-  enabled: true
-  max_entities_per_chunk: 100
-  cleanup_interval: 600 # In ticks, 600 ticks = 30 seconds
-  mob_cleanup_types: # Specify the entities to clean up
-    - ZOMBIE
-    - SKELETON
-    - ITEM
-    - CREEPER
-  clean_all_entities: false # Set to true if you want to remove all entities, not just mobs
+# List of entity types to delete (case-insensitive, use uppercase Bukkit EntityType names)
+entities-to-delete:
+  - ITEM
+  - ARROW
+  - FIREWORK_ROCKET
+  - BOAT
+  - MINECART
+  # Add more entity types as needed
 
-server_stats:
-  enabled: true
-  show_memory_usage: true
-  show_entity_count: true
-  show_tick_rate: true
+# Interval in seconds between entity deletion checks
+deletion-interval-seconds: 180 # 3 min
 
-update_check:
-  enabled: true # Set to true to enable automatic version check
+# Enable sending a warning message to players before entity deletion
+enable-warning: true
+
+# Message to send to players before entity deletion.
+# Use %time% as a placeholder for the warning time in seconds.
+# You can use color codes (e.g., &e for yellow, &6 for gold).
+warning-message: "&eEntities will be cleared in &6%time% &eseconds."
+
+# Time in seconds before deletion to send the warning message
+warning-time-seconds: 15
+
+# Message to broadcast to all players after entities are cleaned up.
+# Use %count% as a placeholder for the number of deleted entities.
+# You can use color codes (e.g., &a for light green, &2 for dark green).
+cleanup-broadcast-message: "&aCleaned up &2%count% &aunnecessary entities."
+
+# Configuration for overload detection
+overload-detection:
+  # Radius in blocks to check for targeted entities around a player
+  radius: 50
+  # Number of targeted entities within the radius that triggers a warning
+  critical-entity-count: 40
+  # Interval in seconds to check for entity overloads
+  check-interval-seconds: 90
