@@ -15,6 +15,7 @@ import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -96,7 +97,8 @@ public class FixLag extends JavaPlugin {
                     return; // No entities to delete
                 }
 
-                if (enableWarning) {
+                final long warningSchedule = deletionIntervalTicks - warningTimeTicks;
+                if (enableWarning && warningSchedule >= 0) {
                     // Schedule the warning message to be sent before deletion
                     Bukkit.getScheduler().runTaskLater(FixLag.this, () -> {
                         long warningTimeSeconds = warningTimeTicks / 20L;
@@ -104,22 +106,22 @@ public class FixLag extends JavaPlugin {
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             player.sendMessage(formattedMessage);
                         }
-                    }, deletionIntervalTicks - warningTimeTicks);
+                    }, warningSchedule);
                 }
 
-                // Schedule the actual entity deletion after the warning time
-                Bukkit.getScheduler().runTaskLater(FixLag.this, () -> {
+                // Schedule the actual entity deletion
+                Bukkit.getScheduler().runTaskLaterAsynchronously(FixLag.this, () -> {
                     int deletedCount = deleteEntities();
                     if (deletedCount > 0) {
                         String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
                         Bukkit.broadcastMessage(broadcastMessage);
                         if (logMemoryStats) {
-                            FixLag.this.logMemoryUsage(); // Corrected line
+                            FixLag.this.logMemoryUsage();
                         }
                     }
-                }, deletionIntervalTicks);
+                }, enableWarning ? deletionIntervalTicks : 0); // If warning is enabled, delay by the full interval, otherwise start immediately
             }
-        }.runTaskTimer(this, deletionIntervalTicks, deletionIntervalTicks);
+        }.runTaskTimer(this, 0L, deletionIntervalTicks); // Initial delay of 0 to start immediately
     }
 
     public int deleteEntities() {
@@ -189,6 +191,38 @@ public class FixLag extends JavaPlugin {
         getLogger().log(Level.INFO, "Memory Stats - Heap: Used=" + usedHeapMB + "MB, Free=" + freeHeapMB + "MB, Max=" + maxHeapMB + "MB | Non-Heap: Used=" + usedNonHeapMB + "MB, Free=" + freeNonHeapMB + "MB, Max=" + maxNonHeapMB + "MB | GC: " + gcStats.toString());
     }
 
+    private String formatDouble(double d) {
+        DecimalFormat df = new DecimalFormat("#.##");
+        return df.format(d);
+    }
+
+    public String getServerInfo() {
+        double[] tps = Bukkit.getServer().getTPS();
+        long usedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
+        long totalMemory = Runtime.getRuntime().totalMemory() / (1024 * 1024);
+        double memoryUsagePercentage = (double) usedMemory / totalMemory * 100;
+
+        // MSPT calculation (approximation)
+        long averageMspt = (long) (1000.0 / tps[0]);
+
+        // Getting CPU Usage in Java is platform-dependent and can be complex.
+        // This provides a basic indication but might not be perfectly accurate.
+        // More robust solutions might involve external libraries or JMX.
+        double cpuLoad = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
+        String cpuUsage = "N/A";
+        if (cpuLoad >= 0) {
+            cpuUsage = formatDouble(cpuLoad * 100 / ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()) + "%";
+        } else {
+            cpuUsage = "Unavailable";
+        }
+
+        return ChatColor.YELLOW + "--- Server Information ---" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "TPS (Last 1m, 5m, 15m): " + ChatColor.GREEN + formatDouble(tps[0]) + ", " + formatDouble(tps[1]) + ", " + formatDouble(tps[2]) + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "MSPT (Approx): " + ChatColor.GREEN + averageMspt + " ms" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "RAM Usage: " + ChatColor.GREEN + usedMemory + "MB / " + totalMemory + "MB [" + formatDouble(memoryUsagePercentage) + "%]" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "CPU Usage: " + ChatColor.GREEN + cpuUsage + ChatColor.RESET;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("fixlag")) {
@@ -196,14 +230,7 @@ public class FixLag extends JavaPlugin {
                 Player player = (Player) sender;
                 if (player.isOp() || player.hasPermission("fixlag.command")) {
                     player.sendMessage(ChatColor.GREEN + "Manually clearing unnecessary entities...");
-                    int deletedCount = deleteEntities();
-                    if (deletedCount > 0) {
-                        String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
-                        Bukkit.broadcastMessage(broadcastMessage);
-                        if (logMemoryStats) {
-                            FixLag.this.logMemoryUsage(); // Corrected line
-                        }
-                    }
+                    Bukkit.getScheduler().runTaskAsynchronously(this, this::deleteAndAnnounce);
                     return true;
                 } else {
                     player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
@@ -211,14 +238,7 @@ public class FixLag extends JavaPlugin {
                 }
             } else {
                 sender.sendMessage(ChatColor.GREEN + "Manually clearing unnecessary entities...");
-                int deletedCount = deleteEntities();
-                if (deletedCount > 0) {
-                    String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
-                    Bukkit.broadcastMessage(broadcastMessage);
-                    if (logMemoryStats) {
-                        FixLag.this.logMemoryUsage(); // Corrected line
-                    }
-                }
+                Bukkit.getScheduler().runTaskAsynchronously(this, this::deleteAndAnnounce);
                 return true;
             }
         } else if (command.getName().equalsIgnoreCase("gcinfo")) {
@@ -233,10 +253,36 @@ public class FixLag extends JavaPlugin {
                 }
             } else {
                 // Console can run this command without permission check
-                sender.sendMessage(getMemoryAndGCInfo());
+                sender.sendMessage(getServerInfo());
+                return true;
+            }
+        } else if (command.getName().equalsIgnoreCase("serverinfo")) {
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                if (player.isOp() || player.hasPermission("fixlag.serverinfo")) {
+                    player.sendMessage(getServerInfo());
+                    return true;
+                } else {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    return true;
+                }
+            } else {
+                // Console can run this command without permission check
+                sender.sendMessage(getServerInfo());
                 return true;
             }
         }
         return false;
+    }
+
+    private void deleteAndAnnounce() {
+        int deletedCount = deleteEntities();
+        if (deletedCount > 0) {
+            String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
+            Bukkit.broadcastMessage(broadcastMessage);
+            if (logMemoryStats) {
+                logMemoryUsage();
+            }
+        }
     }
 }
