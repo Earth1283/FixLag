@@ -11,6 +11,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -24,6 +28,7 @@ public class FixLag extends JavaPlugin {
     private OverloadChecker overloadChecker;
     private long overloadCheckIntervalTicks;
     private String cleanupBroadcastMessage;
+    private boolean logMemoryStats;
 
     @Override
     public void onEnable() {
@@ -55,6 +60,7 @@ public class FixLag extends JavaPlugin {
         warningTimeTicks = config.getLong("warning-time-seconds") * 20L; // Convert seconds to ticks
         overloadCheckIntervalTicks = config.getLong("overload-detection.check-interval-seconds", 30) * 20L; // Default to 30 seconds
         cleanupBroadcastMessage = ChatColor.translateAlternateColorCodes('&', config.getString("cleanup-broadcast-message", "&aCleaned up &2%count% &aunnecessary entities."));
+        logMemoryStats = config.getBoolean("log-memory-stats", false);
 
         // Basic validation
         if (deletionIntervalTicks <= 0) {
@@ -107,6 +113,9 @@ public class FixLag extends JavaPlugin {
                     if (deletedCount > 0) {
                         String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
                         Bukkit.broadcastMessage(broadcastMessage);
+                        if (logMemoryStats) {
+                            FixLag.this.logMemoryUsage(); // Corrected line
+                        }
                     }
                 }, deletionIntervalTicks);
             }
@@ -130,6 +139,56 @@ public class FixLag extends JavaPlugin {
         return deletedEntities;
     }
 
+    public String getMemoryAndGCInfo() {
+        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+        MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+        MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
+
+        long usedHeapMB = heapMemoryUsage.getUsed() / (1024 * 1024);
+        long maxHeapMB = heapMemoryUsage.getMax() / (1024 * 1024);
+        long freeHeapMB = maxHeapMB - usedHeapMB;
+
+        long usedNonHeapMB = nonHeapMemoryUsage.getUsed() / (1024 * 1024);
+        long maxNonHeapMB = nonHeapMemoryUsage.getMax() / (1024 * 1024);
+        long freeNonHeapMB = maxNonHeapMB - usedNonHeapMB;
+
+        List<GarbageCollectorMXBean> gcMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
+        StringBuilder gcStats = new StringBuilder();
+        for (GarbageCollectorMXBean gcBean : gcMXBeans) {
+            gcStats.append(gcBean.getName()).append(": Collections=").append(gcBean.getCollectionCount()).append(", Time=").append(gcBean.getCollectionTime()).append("ms\n");
+        }
+
+        return ChatColor.YELLOW + "--- JVM Memory & GC Info ---" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxHeapMB + "MB" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "Non-Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedNonHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeNonHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxNonHeapMB + "MB" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "Garbage Collectors:" + ChatColor.RESET + "\n" + gcStats.toString();
+    }
+
+    public void logMemoryUsage() {
+        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+        MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+        MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
+
+        long usedHeapMB = heapMemoryUsage.getUsed() / (1024 * 1024);
+        long maxHeapMB = heapMemoryUsage.getMax() / (1024 * 1024);
+        long freeHeapMB = maxHeapMB - usedHeapMB;
+
+        long usedNonHeapMB = nonHeapMemoryUsage.getUsed() / (1024 * 1024);
+        long maxNonHeapMB = nonHeapMemoryUsage.getMax() / (1024 * 1024);
+        long freeNonHeapMB = maxNonHeapMB - usedNonHeapMB;
+
+        List<GarbageCollectorMXBean> gcMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
+        StringBuilder gcStats = new StringBuilder();
+        for (GarbageCollectorMXBean gcBean : gcMXBeans) {
+            gcStats.append(gcBean.getName()).append(": Collections=").append(gcBean.getCollectionCount()).append(", Time=").append(gcBean.getCollectionTime()).append("ms | ");
+        }
+        if (gcStats.length() > 2) {
+            gcStats.setLength(gcStats.length() - 3); // Remove the trailing " | "
+        }
+
+        getLogger().log(Level.INFO, "Memory Stats - Heap: Used=" + usedHeapMB + "MB, Free=" + freeHeapMB + "MB, Max=" + maxHeapMB + "MB | Non-Heap: Used=" + usedNonHeapMB + "MB, Free=" + freeNonHeapMB + "MB, Max=" + maxNonHeapMB + "MB | GC: " + gcStats.toString());
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("fixlag")) {
@@ -141,6 +200,9 @@ public class FixLag extends JavaPlugin {
                     if (deletedCount > 0) {
                         String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
                         Bukkit.broadcastMessage(broadcastMessage);
+                        if (logMemoryStats) {
+                            FixLag.this.logMemoryUsage(); // Corrected line
+                        }
                     }
                     return true;
                 } else {
@@ -153,7 +215,25 @@ public class FixLag extends JavaPlugin {
                 if (deletedCount > 0) {
                     String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
                     Bukkit.broadcastMessage(broadcastMessage);
+                    if (logMemoryStats) {
+                        FixLag.this.logMemoryUsage(); // Corrected line
+                    }
                 }
+                return true;
+            }
+        } else if (command.getName().equalsIgnoreCase("gcinfo")) {
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                if (player.isOp() || player.hasPermission("fixlag.gcinfo")) {
+                    player.sendMessage(getMemoryAndGCInfo());
+                    return true;
+                } else {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    return true;
+                }
+            } else {
+                // Console can run this command without permission check
+                sender.sendMessage(getMemoryAndGCInfo());
                 return true;
             }
         }

@@ -3,7 +3,7 @@ version: 3.0
 main: io.github.Earth1283.fixLag.FixLag
 api-version: 1.17
 author: Earth1283
-description: Regularly deletes specified entities to reduce lag to make server owners' lives easier
+description: Regularly deletes specified entities to reduce lag.
 permissions:
   fixlag.overload.exempt:
     description: Players with this permission will not trigger overload warnings.
@@ -14,7 +14,13 @@ permissions:
   fixlag.command:
     description: Allows players to use the /fixlag command.
     default: op
+  fixlag.gcinfo:
+    description: Allows players to use the /gcinfo command to view GC information.
+    default: op
 commands:
   fixlag:
-    description: Manually triggers the entity deletion.
+    description: Manually triggers the entity deletion. Does not inturrupt with normal checks
     permission: fixlag.command
+  gcinfo:
+    description: Displays JVM memory and Garbage Collection information.
+    permission: fixlag.gcinfo
