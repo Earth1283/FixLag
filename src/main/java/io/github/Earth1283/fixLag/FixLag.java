@@ -11,6 +11,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -21,6 +25,8 @@ import java.util.logging.Level;
 
 public class FixLag extends JavaPlugin {
 
+    private static final String UPDATE_URL = "https://github.com/Earth1283/FixLag/blob/main/latest_version.txt";
+
     private List<String> entitiesToDelete;
     private long deletionIntervalTicks;
     private boolean enableWarning;
@@ -30,6 +36,7 @@ public class FixLag extends JavaPlugin {
     private long overloadCheckIntervalTicks;
     private String cleanupBroadcastMessage;
     private boolean logMemoryStats;
+    private long updateCheckIntervalTicks;
 
     @Override
     public void onEnable() {
@@ -43,6 +50,9 @@ public class FixLag extends JavaPlugin {
 
         // Start the entity deletion task
         startDeletionTask();
+
+        // Start the update check task
+        startUpdateCheckTask();
 
         getLogger().log(Level.INFO, "FixLag plugin has been enabled!");
     }
@@ -62,6 +72,7 @@ public class FixLag extends JavaPlugin {
         overloadCheckIntervalTicks = config.getLong("overload-detection.check-interval-seconds", 30) * 20L; // Default to 30 seconds
         cleanupBroadcastMessage = ChatColor.translateAlternateColorCodes('&', config.getString("cleanup-broadcast-message", "&aCleaned up &2%count% &aunnecessary entities."));
         logMemoryStats = config.getBoolean("log-memory-stats", false);
+        updateCheckIntervalTicks = config.getLong("update-check-interval-seconds", 60 * 60 * 24) * 20L; // Default to 1 day
 
         // Basic validation
         if (deletionIntervalTicks <= 0) {
@@ -76,15 +87,22 @@ public class FixLag extends JavaPlugin {
             getLogger().log(Level.WARNING, "Overload check interval is invalid. Using default value of 30 seconds.");
             overloadCheckIntervalTicks = 30 * 20L;
         }
+        if (updateCheckIntervalTicks <= 0) {
+            getLogger().log(Level.WARNING, "Update check interval is invalid. Using default value of 1 day.");
+            updateCheckIntervalTicks = 60 * 60 * 24 * 20L;
+        }
     }
 
     public void startOverloadCheckTask() {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (overloadChecker != null) {
-                    overloadChecker.checkOverloads();
-                }
+                // Run the OverloadChecker on the main thread
+                Bukkit.getScheduler().runTask(FixLag.this, () -> {
+                    if (overloadChecker != null) {
+                        overloadChecker.checkOverloads();
+                    }
+                });
             }
         }.runTaskTimerAsynchronously(this, overloadCheckIntervalTicks, overloadCheckIntervalTicks);
     }
@@ -111,14 +129,16 @@ public class FixLag extends JavaPlugin {
 
                 // Schedule the actual entity deletion
                 Bukkit.getScheduler().runTaskLaterAsynchronously(FixLag.this, () -> {
-                    int deletedCount = deleteEntities();
-                    if (deletedCount > 0) {
-                        String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
-                        Bukkit.broadcastMessage(broadcastMessage);
-                        if (logMemoryStats) {
-                            FixLag.this.logMemoryUsage();
+                    Bukkit.getScheduler().runTask(FixLag.this, () -> { // Run deleteEntities on the main thread
+                        int deletedCount = deleteEntities();
+                        if (deletedCount > 0) {
+                            String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
+                            Bukkit.broadcastMessage(broadcastMessage);
+                            if (logMemoryStats) {
+                                FixLag.this.logMemoryUsage();
+                            }
                         }
-                    }
+                    });
                 }, enableWarning ? deletionIntervalTicks : 0); // If warning is enabled, delay by the full interval, otherwise start immediately
             }
         }.runTaskTimer(this, 0L, deletionIntervalTicks); // Initial delay of 0 to start immediately
@@ -182,7 +202,7 @@ public class FixLag extends JavaPlugin {
         List<GarbageCollectorMXBean> gcMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
         StringBuilder gcStats = new StringBuilder();
         for (GarbageCollectorMXBean gcBean : gcMXBeans) {
-            gcStats.append(gcBean.getName()).append(": Collections=").append(gcBean.getCollectionCount()).append(", Time=").append(gcBean.getCollectionTime()).append("ms | ");
+            gcStats.append(gcBean.getName()).append(": Collections=").append(gcBean.getCollectionCount()).append(", Time=" + gcBean.getCollectionTime()).append("ms | ");
         }
         if (gcStats.length() > 2) {
             gcStats.setLength(gcStats.length() - 3); // Remove the trailing " | "
@@ -226,11 +246,10 @@ public class FixLag extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("fixlag")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
+            if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.command")) {
                     player.sendMessage(ChatColor.GREEN + "Manually clearing unnecessary entities...");
-                    Bukkit.getScheduler().runTaskAsynchronously(this, this::deleteAndAnnounce);
+                    Bukkit.getScheduler().runTask(this, this::deleteAndAnnounce); // Run synchronously
                     return true;
                 } else {
                     player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
@@ -238,12 +257,11 @@ public class FixLag extends JavaPlugin {
                 }
             } else {
                 sender.sendMessage(ChatColor.GREEN + "Manually clearing unnecessary entities...");
-                Bukkit.getScheduler().runTaskAsynchronously(this, this::deleteAndAnnounce);
+                Bukkit.getScheduler().runTask(this, this::deleteAndAnnounce); // Run synchronously
                 return true;
             }
         } else if (command.getName().equalsIgnoreCase("gcinfo")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
+            if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.gcinfo")) {
                     player.sendMessage(getMemoryAndGCInfo());
                     return true;
@@ -253,12 +271,11 @@ public class FixLag extends JavaPlugin {
                 }
             } else {
                 // Console can run this command without permission check
-                sender.sendMessage(getServerInfo());
+                sender.sendMessage(getMemoryAndGCInfo());
                 return true;
             }
         } else if (command.getName().equalsIgnoreCase("serverinfo")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
+            if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.serverinfo")) {
                     player.sendMessage(getServerInfo());
                     return true;
@@ -282,6 +299,45 @@ public class FixLag extends JavaPlugin {
             Bukkit.broadcastMessage(broadcastMessage);
             if (logMemoryStats) {
                 logMemoryUsage();
+            }
+        }
+    }
+
+    public void startUpdateCheckTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    String latestVersion = getLatestVersion();
+                    if (latestVersion != null) {
+                        if (!getDescription().getVersion().equals(latestVersion)) {
+                            getLogger().log(Level.INFO, "A new version of FixLag is available: " + latestVersion);
+                            notifyUpdate(latestVersion);
+                        } else {
+                            getLogger().log(Level.INFO, "FixLag is up to date.");
+                        }
+                    } else {
+                        getLogger().log(Level.WARNING, "Could not check for updates.");
+                    }
+                } catch (IOException e) {
+                    getLogger().log(Level.WARNING, "Error checking for updates: " + e.getMessage());
+                }
+            }
+        }.runTaskTimerAsynchronously(this, 0L, updateCheckIntervalTicks);
+    }
+
+    private String getLatestVersion() throws IOException {
+        URL url = new URL(UPDATE_URL);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        return reader.readLine();
+    }
+
+    private void notifyUpdate(String latestVersion) {
+        String message = ChatColor.YELLOW + "A new version of FixLag is available: " + latestVersion +
+                ChatColor.RESET + ". You are currently using version: " + ChatColor.YELLOW + getDescription().getVersion();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.isOp() || player.hasPermission("fixlag.notify.update")) {
+                player.sendMessage(message);
             }
         }
     }
