@@ -1,50 +1,72 @@
-# FixLag Plugin Documentation
+# 🛠️ FixLag - Your Minecraft Server Performance Booster! 🚀
 
-## Overview
-FixLag is a Minecraft plugin designed to reduce server lag by removing specific entities that may cause performance issues. This plugin provides the `/fixlag` command, which removes predefined entities from the world and notifies all online players of the number and type of removed entities.
+Tired of lag ruining your players' experience? FixLag is here to help! This plugin automatically removes unnecessary entities from your Minecraft server at regular intervals, helping to reduce lag and improve overall performance.
 
-## Features
-- Clears specific lag-causing entities:
-  - Minecarts
-  - Arrows
-  - Snowballs
-  - Ender Pearls
-  - Primed TNT
-  - Dropped Items
-- Notifies all online players about the number and type of removed entities.
-- Requires the `fixlag.clear` permission to execute the command.
+## ✨ Features
 
-## Installation
-1. Download the FixLag plugin `.jar` file.
-2. Place the `.jar` file into the `plugins` folder of your Minecraft server.
-3. Restart or reload the server.
+* **Automatic Entity Removal:** Configurable list of entities to automatically delete.
+* **Configurable Interval:** Set the frequency at which entity deletion occurs.
+* **Warning System:** Option to warn players before a cleanup occurs.
+* **Overload Detection (if configured):** Detects and potentially acts upon server overload conditions.
+* **Manual Cleanup:** Use a command to trigger entity deletion on demand. Does not interrupt with the regular cleanup cycle
+* **Server Information Command:** Display real-time server performance stats.
+* **Garbage Collection Information:** View the JVM garbage collection details.
+* **Automatic Update Checks:** Stay up-to-date with the latest improvements and fixes.
 
-## Commands
-### `/fixlag`
-- **Description**: Removes specified entities from the world and notifies all players.
-- **Permission**: `fixlag.clear`
-- **Usage**: `/fixlag`
+## ⚙️ Commands
 
-## Permissions
-| Permission      | Description                                      | Default  |
-|-----------------|--------------------------------------------------|----------|
-| `fixlag.clear`  | Allows the player to execute `/fixlag`           | OP       |
-| `fixlag.notify` | (Not required) All players receive notifications | Everyone |
+| Command       | Permission             | Description                                                      | Usage             |
+|---------------|------------------------|------------------------------------------------------------------|-------------------|
+| `/fixlag`     | `fixlag.command`       | Manually triggers the entity deletion process.                   | `/fixlag`         |
+| `/gcinfo`     | `fixlag.gcinfo`        | Displays JVM memory and Garbage Collection information.          | `/gcinfo`         |
+| `/serverinfo` | `fixlag.serverinfo`    | Shows server performance information (TPS, MSPT, RAM, CPU).     | `/serverinfo`     |
 
-## How It Works
-1. The player with the `fixlag.clear` permission executes `/fixlag`.
-2. The plugin scans the world and removes the specified entities.
-3. The number of removed entities per type is counted.
-4. A message is broadcasted to all online players showing how many of each type were removed.
+## 🔒 Permissions
 
-## Example Notification
-```
-FixLag removed the following entities:
-- 10 MINECART
-- 5 ARROW
-- 3 SNOWBALL
-```
+| Permission Node        | Default | Description                                                                |
+|------------------------|---------|----------------------------------------------------------------------------|
+| `fixlag.overload.exempt` | `false` | Players with this permission will not trigger overload warnings.           |
+| `fixlag.overload.notify` | `op`    | Players with this permission will receive overload notifications.         |
+| `fixlag.command`       | `op`    | Allows players to use the `/fixlag` command.                               |
+| `fixlag.gcinfo`        | `op`    | Allows players to use the `/gcinfo` command to view GC information.      |
+| `fixlag.serverinfo`    | `op`    | Allows players to use the `/serverinfo` command to view server information. |
+| `fixlag.notify.update` | `op`    | Allows players to receive update notifications.                            |
 
-## Configuration
-No configuration is required; the plugin works out of the box.
-In fact, because of how bad I am at developing plugins, I can't even make a config file that has content, so I just dropped it.
+## 🛠️ Configuration
+This plugin's main aim is to maximize configurability for server owners via `config.yml`
+The main configuration file for FixLag is `config.yml`, located in the `plugins/FixLag/` directory. Here's a breakdown of the key options:
+
+```yaml
+# List of entity types (in uppercase) to be automatically deleted.
+# Example:
+# entities-to-delete:
+#   - DROPPED_ITEM
+#   - ARROW
+entities-to-delete:
+  - DROPPED_ITEM
+  - ARROW
+
+# Interval in seconds between automatic entity deletions.
+deletion-interval-seconds: 300 # Default: 300 seconds (5 minutes)
+
+# Enable warning message before entity deletion.
+enable-warning: true
+
+# Message to be displayed to players before cleanup. Use %time% for the countdown.
+warning-message: "&eEntities will be cleared in &6%time% &eseconds."
+
+# Time in seconds before deletion to send the warning message.
+warning-time-seconds: 5 # Default: 5 seconds
+
+# Settings for overload detection (if implemented).
+overload-detection:
+  check-interval-seconds: 30 # Interval in seconds to check for overloads (if this feature exists)
+
+# Message broadcasted after a successful cleanup. Use %count% for the number of deleted entities.
+cleanup-broadcast-message: "&aCleaned up &2%count% &aunnecessary entities."
+
+# Log memory statistics to the console after each cleanup.
+log-memory-stats: false
+
+# Interval in seconds to check for plugin updates. Set to 0 to disable.
+update-check-interval-seconds: 86400 # Default: 86400 seconds (24 hours)
