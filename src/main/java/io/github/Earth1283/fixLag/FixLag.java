@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 public class FixLag extends JavaPlugin {
-// update url, only updates for releases
+
     private static final String UPDATE_URL = "https://github.com/Earth1283/FixLag/blob/main/latest_version.txt";
 
     private List<String> entitiesToDelete;
@@ -35,7 +35,6 @@ public class FixLag extends JavaPlugin {
     private long warningTimeTicks;
     private OverloadChecker overloadChecker;
     private long overloadCheckIntervalTicks;
-    private String cleanupBroadcastMessage;
     private boolean logMemoryStats;
     private long updateCheckIntervalTicks;
 
@@ -60,7 +59,7 @@ public class FixLag extends JavaPlugin {
 
         getLogger().log(Level.INFO, "FixLag plugin has been enabled!");
     }
-// make and load messages.yml
+
     private void loadMessages() {
         File messagesFile = new File(getDataFolder(), "messages.yml");
         if (!messagesFile.exists()) {
@@ -102,7 +101,6 @@ public class FixLag extends JavaPlugin {
         enableWarning = config.getBoolean("enable-warning");
         warningTimeTicks = config.getLong("warning-time-seconds") * 20L; // Convert seconds to ticks
         overloadCheckIntervalTicks = config.getLong("overload-detection.check-interval-seconds", 30) * 20L; // Default to 30 seconds
-        cleanupBroadcastMessage = config.getString("cleanup-broadcast-message", "%prefix%entity_clear_broadcast"); // Now a message key
         logMemoryStats = config.getBoolean("log-memory-stats", false);
         updateCheckIntervalTicks = config.getLong("update-check-interval-seconds", 60 * 60 * 24) * 20L; // Default to 1 day
 
@@ -165,7 +163,7 @@ public class FixLag extends JavaPlugin {
                         int deletedCount = deleteEntities();
                         if (deletedCount > 0) {
                             String broadcastMessage = getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
-                            Bukkit.broadcastMessage(broadcastMessage);
+                            Bukkit.getServer().broadcastMessage(broadcastMessage); // Using the recommended method
                             if (logMemoryStats) {
                                 FixLag.this.logMemoryUsage();
                             }
@@ -191,7 +189,6 @@ public class FixLag extends JavaPlugin {
     }
 
     public String getMemoryAndGCInfo() {
-        // Get GC Info (Prehaps specify types for ZGC)
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
         MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
@@ -210,16 +207,25 @@ public class FixLag extends JavaPlugin {
             gcStats.append(gcBean.getName()).append(": Collections=").append(gcBean.getCollectionCount()).append(", Time=").append(gcBean.getCollectionTime()).append("ms\n");
         }
 
+        StringBuilder gcType = new StringBuilder();
+        for (GarbageCollectorMXBean gcBean : gcMXBeans) {
+            if (gcType.length() > 0) {
+                gcType.append(", ");
+            }
+            gcType.append(gcBean.getName());
+        }
+
         return getMessage("gc_info_header") + "\n" +
+                ChatColor.AQUA + "Garbage Collector: " + ChatColor.GREEN + gcType.toString() + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxHeapMB + "MB" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "Non-Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedNonHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeNonHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxNonHeapMB + "MB" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "Garbage Collectors:" + ChatColor.RESET + "\n" + gcStats.toString();
+                ChatColor.AQUA + "GC Stats:" + ChatColor.RESET + "\n" + gcStats.toString();
     }
 
     public void logMemoryUsage() {
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
+        MemoryUsage nonHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
 
         long usedHeapMB = heapMemoryUsage.getUsed() / (1024 * 1024);
         long maxHeapMB = heapMemoryUsage.getMax() / (1024 * 1024);
@@ -266,7 +272,12 @@ public class FixLag extends JavaPlugin {
             cpuUsage = "Unavailable";
         }
 
+        String jvmVersion = System.getProperty("java.version");
+        String jvmName = System.getProperty("java.vm.name");
+
         return getMessage("server_info_header") + "\n" +
+                ChatColor.AQUA + "JVM Version: " + ChatColor.GREEN + jvmVersion + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "JVM Name: " + ChatColor.GREEN + jvmName + ChatColor.RESET + "\n" +
                 getMessage("server_info_tps", "%fixlag_tps_1m%", formatDouble(tps[0]), "%fixlag_tps_5m%", formatDouble(tps[1]), "%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
                 getMessage("server_info_mspt", "%fixlag_mspt%", String.valueOf(averageMspt)) + "\n" +
                 getMessage("server_info_ram", "%fixlag_used_ram%", String.valueOf(usedMemory), "%fixlag_total_ram%", String.valueOf(totalMemory), "%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
@@ -326,7 +337,7 @@ public class FixLag extends JavaPlugin {
         int deletedCount = deleteEntities();
         if (deletedCount > 0) {
             String broadcastMessage = getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
-            Bukkit.broadcastMessage(broadcastMessage);
+            Bukkit.getServer().broadcastMessage(broadcastMessage); // Using the recommended method
             if (logMemoryStats) {
                 logMemoryUsage();
             }
