@@ -6,12 +6,14 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -30,7 +32,6 @@ public class FixLag extends JavaPlugin {
     private List<String> entitiesToDelete;
     private long deletionIntervalTicks;
     private boolean enableWarning;
-    private String warningMessage;
     private long warningTimeTicks;
     private OverloadChecker overloadChecker;
     private long overloadCheckIntervalTicks;
@@ -38,11 +39,14 @@ public class FixLag extends JavaPlugin {
     private boolean logMemoryStats;
     private long updateCheckIntervalTicks;
 
+    private FileConfiguration messagesConfig;
+
     @Override
     public void onEnable() {
         // Load default configuration if it doesn't exist
         saveDefaultConfig();
         loadConfig();
+        loadMessages();
 
         // Initialize Overload Checker
         overloadChecker = new OverloadChecker(this, entitiesToDelete);
@@ -57,6 +61,35 @@ public class FixLag extends JavaPlugin {
         getLogger().log(Level.INFO, "FixLag plugin has been enabled!");
     }
 
+    private void loadMessages() {
+        File messagesFile = new File(getDataFolder(), "messages.yml");
+        if (!messagesFile.exists()) {
+            saveResource("messages.yml", false);
+        }
+        messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+    }
+
+    private String getMessage(String key, String... replacements) {
+        String message = messagesConfig.getString(key, "&cError: Message key '" + key + "' not found in messages.yml");
+        message = ChatColor.translateAlternateColorCodes('&', message);
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) {
+                message = message.replace(replacements[i], replacements[i + 1]);
+            }
+        }
+        return messagesConfig.getString("prefix", "&8[&aFixLag&8] &r") + message;
+    }
+
+    private String getLogMessage(String key, String... replacements) {
+        String message = messagesConfig.getString(key, "Error: Log message key '" + key + "' not found in messages.yml");
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) {
+                message = message.replace(replacements[i], replacements[i + 1]);
+            }
+        }
+        return message;
+    }
+
     @Override
     public void onDisable() {
         getLogger().log(Level.INFO, "FixLag plugin has been disabled!");
@@ -67,10 +100,9 @@ public class FixLag extends JavaPlugin {
         entitiesToDelete = config.getStringList("entities-to-delete");
         deletionIntervalTicks = config.getLong("deletion-interval-seconds") * 20L; // Convert seconds to ticks
         enableWarning = config.getBoolean("enable-warning");
-        warningMessage = ChatColor.translateAlternateColorCodes('&', config.getString("warning-message", "&eEntities will be cleared in &6%time% &eseconds."));
         warningTimeTicks = config.getLong("warning-time-seconds") * 20L; // Convert seconds to ticks
         overloadCheckIntervalTicks = config.getLong("overload-detection.check-interval-seconds", 30) * 20L; // Default to 30 seconds
-        cleanupBroadcastMessage = ChatColor.translateAlternateColorCodes('&', config.getString("cleanup-broadcast-message", "&aCleaned up &2%count% &aunnecessary entities."));
+        cleanupBroadcastMessage = config.getString("cleanup-broadcast-message", "%prefix%entity_clear_broadcast"); // Now a message key
         logMemoryStats = config.getBoolean("log-memory-stats", false);
         updateCheckIntervalTicks = config.getLong("update-check-interval-seconds", 60 * 60 * 24) * 20L; // Default to 1 day
 
@@ -120,7 +152,7 @@ public class FixLag extends JavaPlugin {
                     // Schedule the warning message to be sent before deletion
                     Bukkit.getScheduler().runTaskLater(FixLag.this, () -> {
                         long warningTimeSeconds = warningTimeTicks / 20L;
-                        String formattedMessage = warningMessage.replace("%time%", String.valueOf(warningTimeSeconds));
+                        String formattedMessage = getMessage("entity_clear_warning", "%fixlag_time%", String.valueOf(warningTimeSeconds / 20L));
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             player.sendMessage(formattedMessage);
                         }
@@ -132,11 +164,12 @@ public class FixLag extends JavaPlugin {
                     Bukkit.getScheduler().runTask(FixLag.this, () -> { // Run deleteEntities on the main thread
                         int deletedCount = deleteEntities();
                         if (deletedCount > 0) {
-                            String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
+                            String broadcastMessage = getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
                             Bukkit.broadcastMessage(broadcastMessage);
                             if (logMemoryStats) {
                                 FixLag.this.logMemoryUsage();
                             }
+                            getLogger().log(Level.INFO, getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
                         }
                     });
                 }, enableWarning ? deletionIntervalTicks : 0); // If warning is enabled, delay by the full interval, otherwise start immediately
@@ -153,10 +186,6 @@ public class FixLag extends JavaPlugin {
                     deletedEntities++;
                 }
             }
-        }
-
-        if (deletedEntities > 0) {
-            getLogger().log(Level.INFO, "Deleted " + deletedEntities + " unnecessary entities.");
         }
         return deletedEntities;
     }
@@ -180,7 +209,7 @@ public class FixLag extends JavaPlugin {
             gcStats.append(gcBean.getName()).append(": Collections=").append(gcBean.getCollectionCount()).append(", Time=").append(gcBean.getCollectionTime()).append("ms\n");
         }
 
-        return ChatColor.YELLOW + "--- JVM Memory & GC Info ---" + ChatColor.RESET + "\n" +
+        return getMessage("gc_info_header") + "\n" +
                 ChatColor.AQUA + "Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxHeapMB + "MB" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "Non-Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedNonHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeNonHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxNonHeapMB + "MB" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "Garbage Collectors:" + ChatColor.RESET + "\n" + gcStats.toString();
@@ -236,11 +265,11 @@ public class FixLag extends JavaPlugin {
             cpuUsage = "Unavailable";
         }
 
-        return ChatColor.YELLOW + "--- Server Information ---" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "TPS (Last 1m, 5m, 15m): " + ChatColor.GREEN + formatDouble(tps[0]) + ", " + formatDouble(tps[1]) + ", " + formatDouble(tps[2]) + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "MSPT (Approx): " + ChatColor.GREEN + averageMspt + " ms" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "RAM Usage: " + ChatColor.GREEN + usedMemory + "MB / " + totalMemory + "MB [" + formatDouble(memoryUsagePercentage) + "%]" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "CPU Usage: " + ChatColor.GREEN + cpuUsage + ChatColor.RESET;
+        return getMessage("server_info_header") + "\n" +
+                getMessage("server_info_tps", "%fixlag_tps_1m%", formatDouble(tps[0]), "%fixlag_tps_5m%", formatDouble(tps[1]), "%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
+                getMessage("server_info_mspt", "%fixlag_mspt%", String.valueOf(averageMspt)) + "\n" +
+                getMessage("server_info_ram", "%fixlag_used_ram%", String.valueOf(usedMemory), "%fixlag_total_ram%", String.valueOf(totalMemory), "%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
+                getMessage("server_info_cpu", "%fixlag_cpu_usage%", cpuUsage);
     }
 
     @Override
@@ -248,15 +277,15 @@ public class FixLag extends JavaPlugin {
         if (command.getName().equalsIgnoreCase("fixlag")) {
             if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.command")) {
-                    player.sendMessage(ChatColor.GREEN + "Manually clearing unnecessary entities...");
+                    player.sendMessage(getMessage("entity_clear_manual"));
                     Bukkit.getScheduler().runTask(this, this::deleteAndAnnounce); // Run synchronously
                     return true;
                 } else {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    player.sendMessage(getMessage("permission_denied"));
                     return true;
                 }
             } else {
-                sender.sendMessage(ChatColor.GREEN + "Manually clearing unnecessary entities...");
+                sender.sendMessage(getMessage("entity_clear_manual"));
                 Bukkit.getScheduler().runTask(this, this::deleteAndAnnounce); // Run synchronously
                 return true;
             }
@@ -266,7 +295,7 @@ public class FixLag extends JavaPlugin {
                     player.sendMessage(getMemoryAndGCInfo());
                     return true;
                 } else {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    player.sendMessage(getMessage("permission_denied"));
                     return true;
                 }
             } else {
@@ -280,7 +309,7 @@ public class FixLag extends JavaPlugin {
                     player.sendMessage(getServerInfo());
                     return true;
                 } else {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    player.sendMessage(getMessage("permission_denied"));
                     return true;
                 }
             } else {
@@ -295,11 +324,12 @@ public class FixLag extends JavaPlugin {
     private void deleteAndAnnounce() {
         int deletedCount = deleteEntities();
         if (deletedCount > 0) {
-            String broadcastMessage = cleanupBroadcastMessage.replace("%count%", String.valueOf(deletedCount));
+            String broadcastMessage = getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
             Bukkit.broadcastMessage(broadcastMessage);
             if (logMemoryStats) {
                 logMemoryUsage();
             }
+            getLogger().log(Level.INFO, getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
         }
     }
 
@@ -311,16 +341,16 @@ public class FixLag extends JavaPlugin {
                     String latestVersion = getLatestVersion();
                     if (latestVersion != null) {
                         if (!getDescription().getVersion().equals(latestVersion)) {
-                            getLogger().log(Level.INFO, "A new version of FixLag is available: " + latestVersion);
+                            getLogger().log(Level.INFO, getLogMessage("log_update_available", "%fixlag_version%", latestVersion));
                             notifyUpdate(latestVersion);
                         } else {
-                            getLogger().log(Level.INFO, "FixLag is up to date.");
+                            getLogger().log(Level.INFO, getLogMessage("log_update_uptodate"));
                         }
                     } else {
-                        getLogger().log(Level.WARNING, "Could not check for updates.");
+                        getLogger().log(Level.WARNING, getLogMessage("log_update_check_failed"));
                     }
                 } catch (IOException e) {
-                    getLogger().log(Level.WARNING, "Error checking for updates: " + e.getMessage());
+                    getLogger().log(Level.WARNING, getLogMessage("log_update_check_error", "%fixlag_error%", e.getMessage()));
                 }
             }
         }.runTaskTimerAsynchronously(this, 0L, updateCheckIntervalTicks);
@@ -333,8 +363,8 @@ public class FixLag extends JavaPlugin {
     }
 
     private void notifyUpdate(String latestVersion) {
-        String message = ChatColor.YELLOW + "A new version of FixLag is available: " + latestVersion +
-                ChatColor.RESET + ". You are currently using version: " + ChatColor.YELLOW + getDescription().getVersion();
+        String message = getMessage("update_available", "%fixlag_latest_version%", latestVersion) +
+                getMessage("update_current_version", "%fixlag_current_version%", getDescription().getVersion());
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isOp() || player.hasPermission("fixlag.notify.update")) {
                 player.sendMessage(message);
