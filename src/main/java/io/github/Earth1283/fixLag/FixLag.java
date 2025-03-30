@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 public class FixLag extends JavaPlugin {
-
+// update url, only updates for releases
     private static final String UPDATE_URL = "https://github.com/Earth1283/FixLag/blob/main/latest_version.txt";
 
     private List<String> entitiesToDelete;
@@ -60,7 +60,7 @@ public class FixLag extends JavaPlugin {
 
         getLogger().log(Level.INFO, "FixLag plugin has been enabled!");
     }
-
+// make and load messages.yml
     private void loadMessages() {
         File messagesFile = new File(getDataFolder(), "messages.yml");
         if (!messagesFile.exists()) {
@@ -191,6 +191,7 @@ public class FixLag extends JavaPlugin {
     }
 
     public String getMemoryAndGCInfo() {
+        // Get GC Info (Prehaps specify types for ZGC)
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
         MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
