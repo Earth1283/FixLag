@@ -1,3 +1,6 @@
+# Use Minecraft color codes for these messages
+# Unofficial support for PAPI placehodlers
+
 prefix: "&8[&aFixLag&8] &r"
 entity_clear_manual: "&aManually cleared unnecessary entities..."
 entity_clear_broadcast: "&aCleaned up &2%fixlag_count% &aunnecessary entities."
@@ -6,7 +9,9 @@ permission_denied: "&cYou do not have permission to use this command."
 gc_info_header: "&e--- JVM Memory & GC Info ---"
 server_info_header: "&e--- Server Information ---"
 server_info_tps: "&aTPS (Last 1m, 5m, 15m): &f%fixlag_tps_1m%, %fixlag_tps_5m%, %fixlag_tps_15m%"
-server_info_mspt: "&aMSPT (Approx): &f%fixlag_mspt% ms"
+server_info_mspt: "&aMSPT (Last 1m): &f%fixlag_mspt_1m% ms" # Consider updating this
+server_info_mspt_5m: "&aMSPT (Last 5m): &f%fixlag_mspt_5m% ms" # New key
+server_info_mspt_15m: "&aMSPT (Last 15m): &f%fixlag_mspt_15m% ms" # New key
 server_info_ram: "&aRAM Usage: &f%fixlag_used_ram%MB / %fixlag_total_ram%MB [%fixlag_ram_percentage%]"
 server_info_cpu: "&aCPU Usage: &f%fixlag_cpu_usage%"
 update_available: "&eA new version of FixLag is available: &6%fixlag_latest_version%"

@@ -259,7 +259,12 @@ public class FixLag extends JavaPlugin {
         double memoryUsagePercentage = (double) usedMemory / totalMemory * 100;
 
         // MSPT calculation (approximation)
-        long averageMspt = (long) (1000.0 / tps[0]);
+        long averageMspt1 = (long) Math.round(1000.0 / tps[0]);
+        long averageMspt5 = (long) Math.round(1000.0 / tps[1]);
+        long averageMspt15 = (long) Math.round(1000.0 / tps[2]);
+
+        String jvmVersion = System.getProperty("java.version");
+        String jvmName = System.getProperty("java.vm.name");
 
         // Getting CPU Usage in Java is platform-dependent and can be complex.
         // This provides a basic indication but might not be perfectly accurate.
@@ -272,14 +277,13 @@ public class FixLag extends JavaPlugin {
             cpuUsage = "Unavailable";
         }
 
-        String jvmVersion = System.getProperty("java.version");
-        String jvmName = System.getProperty("java.vm.name");
-
         return getMessage("server_info_header") + "\n" +
                 ChatColor.AQUA + "JVM Version: " + ChatColor.GREEN + jvmVersion + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "JVM Name: " + ChatColor.GREEN + jvmName + ChatColor.RESET + "\n" +
                 getMessage("server_info_tps", "%fixlag_tps_1m%", formatDouble(tps[0]), "%fixlag_tps_5m%", formatDouble(tps[1]), "%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
-                getMessage("server_info_mspt", "%fixlag_mspt%", String.valueOf(averageMspt)) + "\n" +
+                ChatColor.AQUA + "MSPT (Last 1m): " + ChatColor.GREEN + averageMspt1 + " ms" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "MSPT (Last 5m): " + ChatColor.GREEN + averageMspt5 + " ms" + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "MSPT (Last 15m): " + ChatColor.GREEN + averageMspt15 + " ms" + ChatColor.RESET + "\n" +
                 getMessage("server_info_ram", "%fixlag_used_ram%", String.valueOf(usedMemory), "%fixlag_total_ram%", String.valueOf(totalMemory), "%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
                 getMessage("server_info_cpu", "%fixlag_cpu_usage%", cpuUsage);
     }
