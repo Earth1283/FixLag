@@ -68,7 +68,7 @@ public class FixLag extends JavaPlugin {
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
     }
 
-    private String getMessage(String key, String... replacements) {
+    private String getMessage(String key, boolean includePrefix, String... replacements) {
         String message = messagesConfig.getString(key, "&cError: Message key '" + key + "' not found in messages.yml");
         message = ChatColor.translateAlternateColorCodes('&', message);
         for (int i = 0; i < replacements.length; i += 2) {
@@ -76,7 +76,16 @@ public class FixLag extends JavaPlugin {
                 message = message.replace(replacements[i], replacements[i + 1]);
             }
         }
-        return messagesConfig.getString("prefix", "&8[&aFixLag&8] &r") + message;
+        if (includePrefix) {
+            return messagesConfig.getString("prefix", "&8[&aFixLag&8] &r") + message;
+        } else {
+            return message;
+        }
+    }
+
+    // Overload for existing calls that assume prefix
+    private String getMessage(String key, String... replacements) {
+        return getMessage(key, true, replacements);
     }
 
     private String getLogMessage(String key, String... replacements) {
@@ -215,7 +224,7 @@ public class FixLag extends JavaPlugin {
             gcType.append(gcBean.getName());
         }
 
-        return getMessage("gc_info_header") + "\n" +
+        return getMessage("gc_info_header", false) + "\n" +
                 ChatColor.AQUA + "Garbage Collector: " + ChatColor.GREEN + gcType.toString() + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxHeapMB + "MB" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "Non-Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedNonHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeNonHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxNonHeapMB + "MB" + ChatColor.RESET + "\n" +
@@ -265,6 +274,8 @@ public class FixLag extends JavaPlugin {
 
         String jvmVersion = System.getProperty("java.version");
         String jvmName = System.getProperty("java.vm.name");
+        String osArch = System.getProperty("os.arch");
+        String osName = System.getProperty("os.name");
 
         // Getting CPU Usage in Java is platform-dependent and can be complex.
         // This provides a basic indication but might not be perfectly accurate.
@@ -277,15 +288,17 @@ public class FixLag extends JavaPlugin {
             cpuUsage = "Unavailable";
         }
 
-        return getMessage("server_info_header") + "\n" +
+        return getMessage("server_info_header", false) + "\n" +
                 ChatColor.AQUA + "JVM Version: " + ChatColor.GREEN + jvmVersion + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "JVM Name: " + ChatColor.GREEN + jvmName + ChatColor.RESET + "\n" +
-                getMessage("server_info_tps", "%fixlag_tps_1m%", formatDouble(tps[0]), "%fixlag_tps_5m%", formatDouble(tps[1]), "%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
+                ChatColor.AQUA + "OS Architecture: " + ChatColor.GREEN + osArch + ChatColor.RESET + "\n" +
+                ChatColor.AQUA + "OS Name: " + ChatColor.GREEN + osName + ChatColor.RESET + "\n" +
+                getMessage("server_info_tps", false, "%fixlag_tps_1m%", formatDouble(tps[0]), "%fixlag_tps_5m%", formatDouble(tps[1]), "%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
                 ChatColor.AQUA + "MSPT (Last 1m): " + ChatColor.GREEN + averageMspt1 + " ms" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "MSPT (Last 5m): " + ChatColor.GREEN + averageMspt5 + " ms" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "MSPT (Last 15m): " + ChatColor.GREEN + averageMspt15 + " ms" + ChatColor.RESET + "\n" +
-                getMessage("server_info_ram", "%fixlag_used_ram%", String.valueOf(usedMemory), "%fixlag_total_ram%", String.valueOf(totalMemory), "%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
-                getMessage("server_info_cpu", "%fixlag_cpu_usage%", cpuUsage);
+                getMessage("server_info_ram", false, "%fixlag_used_ram%", String.valueOf(usedMemory), "%fixlag_total_ram%", String.valueOf(totalMemory), "%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
+                getMessage("server_info_cpu", false, "%fixlag_cpu_usage%", cpuUsage);
     }
 
     @Override
@@ -293,44 +306,44 @@ public class FixLag extends JavaPlugin {
         if (command.getName().equalsIgnoreCase("fixlag")) {
             if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.command")) {
-                    player.sendMessage(getMessage("entity_clear_manual"));
+                    player.sendMessage(getMessage("entity_clear_manual", false)); // No prefix
                     Bukkit.getScheduler().runTask(this, this::deleteAndAnnounce); // Run synchronously
                     return true;
                 } else {
-                    player.sendMessage(getMessage("permission_denied"));
+                    player.sendMessage(getMessage("permission_denied", false)); // No prefix
                     return true;
                 }
             } else {
-                sender.sendMessage(getMessage("entity_clear_manual"));
+                sender.sendMessage(getMessage("entity_clear_manual", false)); // No prefix
                 Bukkit.getScheduler().runTask(this, this::deleteAndAnnounce); // Run synchronously
                 return true;
             }
         } else if (command.getName().equalsIgnoreCase("gcinfo")) {
             if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.gcinfo")) {
-                    player.sendMessage(getMemoryAndGCInfo());
+                    player.sendMessage(getMemoryAndGCInfo()); // Already formatted
                     return true;
                 } else {
-                    player.sendMessage(getMessage("permission_denied"));
+                    player.sendMessage(getMessage("permission_denied", false)); // No prefix
                     return true;
                 }
             } else {
                 // Console can run this command without permission check
-                sender.sendMessage(getMemoryAndGCInfo());
+                sender.sendMessage(getMemoryAndGCInfo()); // Already formatted
                 return true;
             }
         } else if (command.getName().equalsIgnoreCase("serverinfo")) {
             if (sender instanceof Player player) {
                 if (player.isOp() || player.hasPermission("fixlag.serverinfo")) {
-                    player.sendMessage(getServerInfo());
+                    player.sendMessage(getServerInfo()); // Already formatted
                     return true;
                 } else {
-                    player.sendMessage(getMessage("permission_denied"));
+                    player.sendMessage(getMessage("permission_denied", false)); // No prefix
                     return true;
                 }
             } else {
                 // Console can run this command without permission check
-                sender.sendMessage(getServerInfo());
+                sender.sendMessage(getServerInfo()); // Already formatted
                 return true;
             }
         }
