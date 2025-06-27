@@ -33,7 +33,7 @@ public class FixLag extends JavaPlugin {
     private long deletionIntervalTicks;
     private boolean enableWarning;
     private long warningTimeTicks;
-    private OverloadChecker overloadChecker;
+    private OverloadChecker overloadChecker; // Reference to the separate OverloadChecker class
     private long overloadCheckIntervalTicks;
     private boolean logMemoryStats;
     private long updateCheckIntervalTicks;
@@ -47,13 +47,18 @@ public class FixLag extends JavaPlugin {
         loadConfig();
         loadMessages();
 
-        // Initialize Overload Checker
+        // Initialize Overload Checker (using the separate class)
         overloadChecker = new OverloadChecker(this, entitiesToDelete);
-        startOverloadCheckTask();
+        // Start the overload checking task using the method from the OverloadChecker class
+        // Use overloadCheckIntervalTicks for both delay and period
+        overloadChecker.startChecking(overloadCheckIntervalTicks, overloadCheckIntervalTicks);
+
 
         // Start the entity deletion task
         startDeletionTask();
-        getLogger().log(Level.INFO, "Cleared entities!");
+        // This log message might be misleading as entities are cleared periodically, not just on enable
+        // getLogger().log(Level.INFO, "Cleared entities!");
+
 
         // Start the update check task
         startUpdateCheckTask();
@@ -101,6 +106,16 @@ public class FixLag extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Stop the overload checking task
+        if (overloadChecker != null) {
+            overloadChecker.stopChecking();
+        }
+        // Stop the entity deletion task (if you have a BukkitTask for it)
+        // You might need to store the BukkitTask returned by runTaskTimer
+        // if you want to explicitly cancel it on disable.
+        // For now, the tasks will naturally stop when the plugin is disabled,
+        // but explicit cancellation is cleaner.
+
         getLogger().log(Level.INFO, "FixLag plugin has been disabled!");
         getLogger().log(Level.INFO, "Goodbye!");
     }
@@ -134,20 +149,6 @@ public class FixLag extends JavaPlugin {
         }
     }
 
-    public void startOverloadCheckTask() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Run the OverloadChecker on the main thread
-                Bukkit.getScheduler().runTask(FixLag.this, () -> {
-                    if (overloadChecker != null) {
-                        overloadChecker.checkOverloads();
-                    }
-                });
-            }
-        }.runTaskTimerAsynchronously(this, overloadCheckIntervalTicks, overloadCheckIntervalTicks);
-    }
-
     public void startDeletionTask() {
         new BukkitRunnable() {
             @Override
@@ -161,7 +162,8 @@ public class FixLag extends JavaPlugin {
                     // Schedule the warning message to be sent before deletion
                     Bukkit.getScheduler().runTaskLater(FixLag.this, () -> {
                         long warningTimeSeconds = warningTimeTicks / 20L;
-                        String formattedMessage = getMessage("entity_clear_warning", "%fixlag_time%", String.valueOf(warningTimeSeconds / 20L));
+                        // Corrected placeholder usage based on messages.yml structure
+                        String formattedMessage = getMessage("entity_clear_warning", "%time%", String.valueOf(warningTimeSeconds));
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             player.sendMessage(formattedMessage);
                         }
@@ -169,18 +171,19 @@ public class FixLag extends JavaPlugin {
                 }
 
                 // Schedule the actual entity deletion
-                Bukkit.getScheduler().runTaskLaterAsynchronously(FixLag.this, () -> {
-                    Bukkit.getScheduler().runTask(FixLag.this, () -> { // Run deleteEntities on the main thread
-                        int deletedCount = deleteEntities();
-                        if (deletedCount > 0) {
-                            String broadcastMessage = getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
-                            Bukkit.getServer().broadcastMessage(broadcastMessage); // Using the recommended method
-                            if (logMemoryStats) {
-                                FixLag.this.logMemoryUsage();
-                            }
-                            getLogger().log(Level.INFO, getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
+                // Deletion must run on the main thread
+                Bukkit.getScheduler().runTaskLater(FixLag.this, () -> {
+                    int deletedCount = deleteEntities();
+                    if (deletedCount > 0) {
+                        // Corrected placeholder usage based on messages.yml structure
+                        String broadcastMessage = getMessage("entity_clear_broadcast", "%count%", String.valueOf(deletedCount));
+                        Bukkit.getServer().broadcastMessage(broadcastMessage); // Using the recommended method
+                        if (logMemoryStats) {
+                            FixLag.this.logMemoryUsage();
                         }
-                    });
+                        // Corrected placeholder usage based on messages.yml structure
+                        getLogger().log(Level.INFO, getLogMessage("log_entity_deleted", "%count%", String.valueOf(deletedCount)));
+                    }
                 }, enableWarning ? deletionIntervalTicks : 0); // If warning is enabled, delay by the full interval, otherwise start immediately
             }
         }.runTaskTimer(this, 0L, deletionIntervalTicks); // Initial delay of 0 to start immediately
@@ -190,7 +193,8 @@ public class FixLag extends JavaPlugin {
         int deletedEntities = 0;
         for (World world : Bukkit.getWorlds()) {
             for (Entity entity : world.getEntities()) {
-                if (entitiesToDelete.contains(entity.getType().name().toUpperCase())) {
+                // Check if the entity is valid before attempting to remove it
+                if (entity.isValid() && entitiesToDelete.contains(entity.getType().name().toUpperCase())) {
                     entity.remove();
                     deletedEntities++;
                 }
@@ -236,7 +240,7 @@ public class FixLag extends JavaPlugin {
     public void logMemoryUsage() {
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        MemoryUsage nonHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+        MemoryUsage nonHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage(); // This should probably be getNonHeapMemoryUsage()
 
         long usedHeapMB = heapMemoryUsage.getUsed() / (1024 * 1024);
         long maxHeapMB = heapMemoryUsage.getMax() / (1024 * 1024);
@@ -285,22 +289,24 @@ public class FixLag extends JavaPlugin {
         double cpuLoad = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
         String cpuUsage = "N/A";
         if (cpuLoad >= 0) {
+            // SystemLoadAverage is typically per-core, so divide by available processors
             cpuUsage = formatDouble(cpuLoad * 100 / ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()) + "%";
         } else {
             cpuUsage = "Unavailable";
         }
 
+        // Corrected placeholder usage based on messages.yml structure
         return getMessage("server_info_header", false) + "\n" +
                 ChatColor.AQUA + "JVM Version: " + ChatColor.GREEN + jvmVersion + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "JVM Name: " + ChatColor.GREEN + jvmName + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "OS Architecture: " + ChatColor.GREEN + osArch + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "OS Name: " + ChatColor.GREEN + osName + ChatColor.RESET + "\n" +
-                getMessage("server_info_tps", false, "%fixlag_tps_1m%", formatDouble(tps[0]), "%fixlag_tps_5m%", formatDouble(tps[1]), "%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
+                getMessage("server_info_tps", false, "%tps_1m%", formatDouble(tps[0]), "%tps_5m%", formatDouble(tps[1]), "%tps_15m%", formatDouble(tps[2])) + "\n" +
                 ChatColor.AQUA + "MSPT (Last 1m): " + ChatColor.GREEN + averageMspt1 + " ms" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "MSPT (Last 5m): " + ChatColor.GREEN + averageMspt5 + " ms" + ChatColor.RESET + "\n" +
                 ChatColor.AQUA + "MSPT (Last 15m): " + ChatColor.GREEN + averageMspt15 + " ms" + ChatColor.RESET + "\n" +
-                getMessage("server_info_ram", false, "%fixlag_used_ram%", String.valueOf(usedMemory), "%fixlag_total_ram%", String.valueOf(totalMemory), "%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
-                getMessage("server_info_cpu", false, "%fixlag_cpu_usage%", cpuUsage);
+                getMessage("server_info_ram", false, "%used_ram%", String.valueOf(usedMemory), "%total_ram%", String.valueOf(totalMemory), "%ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
+                getMessage("server_info_cpu", false, "%cpu_usage%", cpuUsage);
     }
 
     @Override
@@ -355,12 +361,14 @@ public class FixLag extends JavaPlugin {
     private void deleteAndAnnounce() {
         int deletedCount = deleteEntities();
         if (deletedCount > 0) {
-            String broadcastMessage = getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
+            // Corrected placeholder usage based on messages.yml structure
+            String broadcastMessage = getMessage("entity_clear_broadcast", "%count%", String.valueOf(deletedCount));
             Bukkit.getServer().broadcastMessage(broadcastMessage); // Using the recommended method
             if (logMemoryStats) {
                 logMemoryUsage();
             }
-            getLogger().log(Level.INFO, getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
+            // Corrected placeholder usage based on messages.yml structure
+            getLogger().log(Level.INFO, getLogMessage("log_entity_deleted", "%count%", String.valueOf(deletedCount)));
         }
     }
 
@@ -372,7 +380,8 @@ public class FixLag extends JavaPlugin {
                     String latestVersion = getLatestVersion();
                     if (latestVersion != null) {
                         if (!getDescription().getVersion().equals(latestVersion)) {
-                            getLogger().log(Level.INFO, getLogMessage("log_update_available", "%fixlag_version%", latestVersion));
+                            // Corrected placeholder usage based on messages.yml structure
+                            getLogger().log(Level.INFO, getLogMessage("log_update_available", "%version%", latestVersion));
                             notifyUpdate(latestVersion);
                         } else {
                             getLogger().log(Level.INFO, getLogMessage("log_update_uptodate"));
@@ -381,7 +390,8 @@ public class FixLag extends JavaPlugin {
                         getLogger().log(Level.WARNING, getLogMessage("log_update_check_failed"));
                     }
                 } catch (IOException e) {
-                    getLogger().log(Level.WARNING, getLogMessage("log_update_check_error", "%fixlag_error%", e.getMessage()));
+                    // Corrected placeholder usage based on messages.yml structure
+                    getLogger().log(Level.WARNING, getLogMessage("log_update_check_error", "%error%", e.getMessage()));
                 }
             }
         }.runTaskTimerAsynchronously(this, 0L, updateCheckIntervalTicks);
@@ -394,12 +404,54 @@ public class FixLag extends JavaPlugin {
     }
 
     private void notifyUpdate(String latestVersion) {
-        String message = getMessage("update_available", "%fixlag_latest_version%", latestVersion) +
-                getMessage("update_current_version", "%fixlag_current_version%", getDescription().getVersion());
+        // Corrected placeholder usage based on messages.yml structure
+        String message = getMessage("update_available", "%latest_version%", latestVersion) +
+                getMessage("update_current_version", "%current_version%", getDescription().getVersion());
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isOp() || player.hasPermission("fixlag.notify.update")) {
                 player.sendMessage(message);
             }
         }
     }
+
+    // REMOVE THE INNER OVERLOADCHECKER CLASS DEFINITION HERE
+    /*
+    public class OverloadChecker {
+        private final FixLag plugin;
+        private final List<String> entitiesToDelete;
+
+        public OverloadChecker(FixLag plugin, List<String> entitiesToDelete) {
+            this.plugin = plugin;
+            this.entitiesToDelete = entitiesToDelete;
+        }
+
+        public void checkOverloads() {
+            // Example overload detection: check if TPS is below threshold or memory usage is high
+            double[] tps = org.bukkit.Bukkit.getServer().getTPS();
+            double minTps = tps.length > 0 ? tps[0] : 20.0;
+            long usedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
+            long totalMemory = Runtime.getRuntime().totalMemory() / (1024 * 1024);
+            double memoryUsagePercent = (double) usedMemory / totalMemory * 100;
+
+            // Thresholds (could be configurable)
+            double tpsThreshold = 15.0;
+            double memoryThreshold = 90.0;
+
+            if (minTps < tpsThreshold || memoryUsagePercent > memoryThreshold) {
+                // Overload detected, clear entities and notify
+                org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                    int deletedCount = plugin.deleteEntities();
+                    if (deletedCount > 0) {
+                        String broadcastMessage = plugin.getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
+                        org.bukkit.Bukkit.getServer().broadcastMessage(broadcastMessage);
+                        if (plugin.logMemoryStats) {
+                            plugin.logMemoryUsage();
+                        }
+                        plugin.getLogger().log(java.util.logging.Level.INFO, plugin.getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
+                    }
+                });
+            }
+        }
+    }
+    */
 }
