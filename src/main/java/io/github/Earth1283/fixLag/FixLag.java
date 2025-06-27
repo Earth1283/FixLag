@@ -53,6 +53,7 @@ public class FixLag extends JavaPlugin {
 
         // Start the entity deletion task
         startDeletionTask();
+        getLogger().log(Level.INFO, "Cleared entities!");
 
         // Start the update check task
         startUpdateCheckTask();
