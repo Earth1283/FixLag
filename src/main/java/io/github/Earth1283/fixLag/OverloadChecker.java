@@ -35,7 +35,7 @@ public class OverloadChecker {
         for (Player player : Bukkit.getOnlinePlayers()) {
             Location playerLocation = player.getLocation();
             World world = playerLocation.getWorld();
-            if (world != null) {
+            if (world != null) { // check all worlds by default
                 List<Entity> nearbyEntities = world.getNearbyEntities(playerLocation, overloadRadius, overloadRadius, overloadRadius).stream()
                         .filter(entity -> entitiesToDelete.contains(entity.getType().name().toUpperCase()))
                         .filter(entity -> !entity.hasPermission("fixlag.overload.exempt"))

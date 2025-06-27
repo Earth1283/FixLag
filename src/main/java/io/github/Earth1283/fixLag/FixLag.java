@@ -101,6 +101,7 @@ public class FixLag extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().log(Level.INFO, "FixLag plugin has been disabled!");
+        getLogger().log(Level.INFO, "Goodbye!");
     }
 
     public void loadConfig() {
