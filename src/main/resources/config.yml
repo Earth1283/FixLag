@@ -5,6 +5,7 @@ entities-to-delete:
   - FIREWORK_ROCKET
   - BOAT
   - MINECART
+  - BAT # These are a pain when more chunks are loaded
   # Add more entity types as needed
 
 # Interval in seconds between entity deletion checks
