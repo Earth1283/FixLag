@@ -88,7 +88,7 @@ public class OverloadChecker {
 
                                 // If overload detected, notify staff
                                 if (finalCount > criticalEntityCount) {
-                                    String message = ChatColor.RED + "Warning! High number of targeted entities (" + finalCount + ") detected near " + p.getName() + ".";
+                                    String message = ChatColor.RED + "Warning! High number of targeted entities (" + finalCount + ") detected near player " + p.getName() + ".";
                                     // Notify staff on the main thread
                                     for (Player staff : Bukkit.getOnlinePlayers()) {
                                         // Check if staff player is still online and has permission/is op
@@ -114,9 +114,4 @@ public class OverloadChecker {
             checkTask = null;
         }
     }
-
-    // The old checkOverloads method is removed as it's replaced by the scheduled task logic.
-    // ...existing code...
-    // public void checkOverloads() { ... }
-    // ...existing code...
 }

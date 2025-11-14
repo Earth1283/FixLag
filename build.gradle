@@ -19,6 +19,8 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     implementation("net.kyori:adventure-api:4.19.0")
+    implementation("net.kyori:adventure-text-minimessage:4.19.0")
+    implementation("net.kyori:adventure-text-serializer-legacy:4.19.0")
 }
 
 def targetJavaVersion = 21

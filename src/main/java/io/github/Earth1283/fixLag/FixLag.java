@@ -1,7 +1,6 @@
 package io.github.Earth1283.fixLag;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -25,6 +24,11 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.logging.Level;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+
 public class FixLag extends JavaPlugin {
 
     private static final String UPDATE_URL = "https://github.com/Earth1283/FixLag/blob/main/latest_version.txt";
@@ -39,6 +43,8 @@ public class FixLag extends JavaPlugin {
     private long updateCheckIntervalTicks;
 
     private FileConfiguration messagesConfig;
+    private MiniMessage miniMessage;
+    private LegacyComponentSerializer legacySerializer;
 
     @Override
     public void onEnable() {
@@ -46,6 +52,10 @@ public class FixLag extends JavaPlugin {
         saveDefaultConfig();
         loadConfig();
         loadMessages();
+
+        // Initialize MiniMessage and serializer
+        miniMessage = MiniMessage.miniMessage();
+        legacySerializer = LegacyComponentSerializer.legacySection();
 
         // Initialize Overload Checker (using the separate class)
         overloadChecker = new OverloadChecker(this, entitiesToDelete);
@@ -74,19 +84,21 @@ public class FixLag extends JavaPlugin {
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
     }
 
+    // Render the message using MiniMessage and return a legacy-formatted string (with color codes) ready for Bukkit sendMessage.
     private String getMessage(String key, boolean includePrefix, String... replacements) {
-        String message = messagesConfig.getString(key, "&cError: Message key '" + key + "' not found in messages.yml");
-        message = ChatColor.translateAlternateColorCodes('&', message);
+        String raw = messagesConfig.getString(key, "Error: Message key '" + key + "' not found in messages.yml");
+        // Apply replacements on raw text before parsing
         for (int i = 0; i < replacements.length; i += 2) {
             if (i + 1 < replacements.length) {
-                message = message.replace(replacements[i], replacements[i + 1]);
+                raw = raw.replace(replacements[i], replacements[i + 1]);
             }
         }
         if (includePrefix) {
-            return messagesConfig.getString("prefix", "&8[&aFixLag&8] &r") + message;
-        } else {
-            return message;
+            String prefixRaw = messagesConfig.getString("prefix", "<gray>[<green>FixLag<gray>] <reset>");
+            raw = prefixRaw + raw;
         }
+        Component comp = miniMessage.deserialize(raw);
+        return legacySerializer.serialize(comp);
     }
 
     // Overload for existing calls that assume prefix
@@ -94,14 +106,16 @@ public class FixLag extends JavaPlugin {
         return getMessage(key, true, replacements);
     }
 
+    // Return a plain (no color/formatting) string suitable for logs using PlainTextComponentSerializer
     private String getLogMessage(String key, String... replacements) {
-        String message = messagesConfig.getString(key, "Error: Log message key '" + key + "' not found in messages.yml");
+        String raw = messagesConfig.getString(key, "Error: Log message key '" + key + "' not found in messages.yml");
         for (int i = 0; i < replacements.length; i += 2) {
             if (i + 1 < replacements.length) {
-                message = message.replace(replacements[i], replacements[i + 1]);
+                raw = raw.replace(replacements[i], replacements[i + 1]);
             }
         }
-        return message;
+        Component comp = miniMessage.deserialize(raw);
+        return PlainTextComponentSerializer.plainText().serialize(comp);
     }
 
     @Override
@@ -230,11 +244,16 @@ public class FixLag extends JavaPlugin {
             gcType.append(gcBean.getName());
         }
 
-        return getMessage("gc_info_header", false) + "\n" +
-                ChatColor.AQUA + "Garbage Collector: " + ChatColor.GREEN + gcType.toString() + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxHeapMB + "MB" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "Non-Heap Memory: " + ChatColor.RESET + "Used=" + ChatColor.GREEN + usedNonHeapMB + "MB" + ChatColor.RESET + ", Free=" + ChatColor.GREEN + freeNonHeapMB + "MB" + ChatColor.RESET + ", Max=" + ChatColor.GREEN + maxNonHeapMB + "MB" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "GC Stats:" + ChatColor.RESET + "\n" + gcStats.toString();
+        // Build a MiniMessage raw string for the full GC info
+        String headerRaw = messagesConfig.getString("gc_info_header", "<bold>GC Info</bold>");
+        String raw = headerRaw + "\n" +
+                "<aqua>Garbage Collector: <green>" + gcType.toString() + "</green></aqua>\n" +
+                "<aqua>Heap Memory:</aqua> Used=<green>" + usedHeapMB + "MB</green>, Free=<green>" + freeHeapMB + "MB</green>, Max=<green>" + maxHeapMB + "MB</green>\n" +
+                "<aqua>Non-Heap Memory:</aqua> Used=<green>" + usedNonHeapMB + "MB</green>, Free=<green>" + freeNonHeapMB + "MB</green>, Max=<green>" + maxNonHeapMB + "MB</green>\n" +
+                "<aqua>GC Stats:</aqua>\n" + gcStats.toString();
+
+        Component comp = miniMessage.deserialize(raw);
+        return legacySerializer.serialize(comp);
     }
 
     public void logMemoryUsage() {
@@ -283,30 +302,37 @@ public class FixLag extends JavaPlugin {
         String osArch = System.getProperty("os.arch");
         String osName = System.getProperty("os.name");
 
-        // Getting CPU Usage in Java is platform-dependent and can be complex.
-        // This provides a basic indication but might not be perfectly accurate.
-        // More robust solutions might involve external libraries or JMX.
         double cpuLoad = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
         String cpuUsage = "N/A";
         if (cpuLoad >= 0) {
-            // SystemLoadAverage is typically per-core, so divide by available processors
             cpuUsage = formatDouble(cpuLoad * 100 / ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()) + "%";
         } else {
             cpuUsage = "Unavailable";
         }
 
-        // Corrected placeholder usage based on messages.yml structure
-        return getMessage("server_info_header", false) + "\n" +
-                ChatColor.AQUA + "JVM Version: " + ChatColor.GREEN + jvmVersion + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "JVM Name: " + ChatColor.GREEN + jvmName + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "OS Architecture: " + ChatColor.GREEN + osArch + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "OS Name: " + ChatColor.GREEN + osName + ChatColor.RESET + "\n" +
-                getMessage("server_info_tps", false, "%tps_1m%", formatDouble(tps[0]), "%tps_5m%", formatDouble(tps[1]), "%tps_15m%", formatDouble(tps[2])) + "\n" +
-                ChatColor.AQUA + "MSPT (Last 1m): " + ChatColor.GREEN + averageMspt1 + " ms" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "MSPT (Last 5m): " + ChatColor.GREEN + averageMspt5 + " ms" + ChatColor.RESET + "\n" +
-                ChatColor.AQUA + "MSPT (Last 15m): " + ChatColor.GREEN + averageMspt15 + " ms" + ChatColor.RESET + "\n" +
-                getMessage("server_info_ram", false, "%used_ram%", String.valueOf(usedMemory), "%total_ram%", String.valueOf(totalMemory), "%ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
-                getMessage("server_info_cpu", false, "%cpu_usage%", cpuUsage);
+        String headerRaw = messagesConfig.getString("server_info_header", "<bold>Server Info</bold>");
+        String raw = headerRaw + "\n" +
+                "<aqua>JVM Version: <green>" + jvmVersion + "</green></aqua>\n" +
+                "<aqua>JVM Name: <green>" + jvmName + "</green></aqua>\n" +
+                "<aqua>OS Architecture: <green>" + osArch + "</green></aqua>\n" +
+                "<aqua>OS Name: <green>" + osName + "</green></aqua>\n" +
+                // TPS line is taken from messages config to allow localized formatting
+                messagesConfig.getString("server_info_tps", "<aqua>TPS:</aqua> 1m=<green>%tps_1m%</green>, 5m=<green>%tps_5m%</green>, 15m=<green>%tps_15m%</green>")
+                        .replace("%tps_1m%", formatDouble(tps[0]))
+                        .replace("%tps_5m%", formatDouble(tps[1]))
+                        .replace("%tps_15m%", formatDouble(tps[2])) + "\n" +
+                "<aqua>MSPT (Last 1m): <green>" + averageMspt1 + " ms</green></aqua>\n" +
+                "<aqua>MSPT (Last 5m): <green>" + averageMspt5 + " ms</green></aqua>\n" +
+                "<aqua>MSPT (Last 15m): <green>" + averageMspt15 + " ms</green></aqua>\n" +
+                messagesConfig.getString("server_info_ram", "<aqua>RAM:</aqua> Used=<green>%used_ram%MB</green>, Total=<green>%total_ram%MB</green>, Percent=<green>%ram_percentage%</green>")
+                        .replace("%used_ram%", String.valueOf(usedMemory))
+                        .replace("%total_ram%", String.valueOf(totalMemory))
+                        .replace("%ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
+                messagesConfig.getString("server_info_cpu", "<aqua>CPU Usage: <green>%cpu_usage%</green></aqua>")
+                        .replace("%cpu_usage%", cpuUsage);
+
+        Component comp = miniMessage.deserialize(raw);
+        return legacySerializer.serialize(comp);
     }
 
     @Override

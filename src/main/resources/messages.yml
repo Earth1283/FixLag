@@ -1,7 +1,6 @@
-# Use Minecraft color codes for these messages
-# Unofficial support for PAPI placehodlers
+# Use Minecraft color codes or MiniMessage color codes
 
-prefix: "&8[&aFixLag&8] &r"
+prefix: "<#87CEEB>[<#90EE90>ꜰɪxʟᴀɢ</#90EE90>] </#87CEEB><reset>"
 entity_clear_manual: "&aManually cleared unnecessary entities..."
 entity_clear_broadcast: "&aCleaned up &2%fixlag_count% &aunnecessary entities."
 entity_clear_warning: "&eEntities will be cleared in &6%fixlag_time% &eseconds."
@@ -17,8 +16,8 @@ server_info_cpu: "&aCPU Usage: &f%fixlag_cpu_usage%"
 update_available: "&eA new version of FixLag is available: &6%fixlag_latest_version%"
 update_current_version: "&eYou are currently using version: &6%fixlag_current_version%"
 update_check_failed: "&cCould not check for updates."
-update_check_error: "&cError checking for updates: %fixlag_error%"
+update_check_error: "&cError checking for updates: %fixlag_error%."
 log_entity_deleted: "Deleted %fixlag_count% unnecessary entities."
-log_update_available: "A new version of FixLag is available: %fixlag_version%"
+log_update_available: "A new version of FixLag is available: %fixlag_version%. Download <hover:show_text:'<#90EE90>Click to download from the official Modrinth project</#90EE90>'><click:open_url:'https://modrinth.com/plugin/fixlag/'>here</click></hover>"
 log_update_uptodate: "FixLag is up to date."
 log_update_check_failed: "Could not check for updates."
