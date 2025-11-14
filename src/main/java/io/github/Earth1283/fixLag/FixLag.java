@@ -413,45 +413,4 @@ public class FixLag extends JavaPlugin {
             }
         }
     }
-
-    // REMOVE THE INNER OVERLOADCHECKER CLASS DEFINITION HERE
-    /*
-    public class OverloadChecker {
-        private final FixLag plugin;
-        private final List<String> entitiesToDelete;
-
-        public OverloadChecker(FixLag plugin, List<String> entitiesToDelete) {
-            this.plugin = plugin;
-            this.entitiesToDelete = entitiesToDelete;
-        }
-
-        public void checkOverloads() {
-            // Example overload detection: check if TPS is below threshold or memory usage is high
-            double[] tps = org.bukkit.Bukkit.getServer().getTPS();
-            double minTps = tps.length > 0 ? tps[0] : 20.0;
-            long usedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
-            long totalMemory = Runtime.getRuntime().totalMemory() / (1024 * 1024);
-            double memoryUsagePercent = (double) usedMemory / totalMemory * 100;
-
-            // Thresholds (could be configurable)
-            double tpsThreshold = 15.0;
-            double memoryThreshold = 90.0;
-
-            if (minTps < tpsThreshold || memoryUsagePercent > memoryThreshold) {
-                // Overload detected, clear entities and notify
-                org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                    int deletedCount = plugin.deleteEntities();
-                    if (deletedCount > 0) {
-                        String broadcastMessage = plugin.getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
-                        org.bukkit.Bukkit.getServer().broadcastMessage(broadcastMessage);
-                        if (plugin.logMemoryStats) {
-                            plugin.logMemoryUsage();
-                        }
-                        plugin.getLogger().log(java.util.logging.Level.INFO, plugin.getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
-                    }
-                });
-            }
-        }
-    }
-    */
 }
