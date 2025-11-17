@@ -124,11 +124,6 @@ public class FixLag extends JavaPlugin {
         if (overloadChecker != null) {
             overloadChecker.stopChecking();
         }
-        // Stop the entity deletion task (if you have a BukkitTask for it)
-        // You might need to store the BukkitTask returned by runTaskTimer
-        // if you want to explicitly cancel it on disable.
-        // For now, the tasks will naturally stop when the plugin is disabled,
-        // but explicit cancellation is cleaner.
 
         getLogger().log(Level.INFO, "FixLag plugin has been disabled!");
         getLogger().log(Level.INFO, "Goodbye!");
@@ -146,19 +141,19 @@ public class FixLag extends JavaPlugin {
 
         // Basic validation
         if (deletionIntervalTicks <= 0) {
-            getLogger().log(Level.WARNING, "Deletion interval is invalid. Using default value of 60 seconds.");
+            getLogger().log(Level.WARNING, "Deletion interval is invalid! Using default value of 60 seconds.");
             deletionIntervalTicks = 60 * 20L;
         }
         if (warningTimeTicks < 0) {
-            getLogger().log(Level.WARNING, "Warning time is invalid. Using default value of 5 seconds.");
+            getLogger().log(Level.WARNING, "Warning time is invalid! Using default value of 5 seconds.");
             warningTimeTicks = 5 * 20L;
         }
         if (overloadCheckIntervalTicks <= 0) {
-            getLogger().log(Level.WARNING, "Overload check interval is invalid. Using default value of 30 seconds.");
+            getLogger().log(Level.WARNING, "Overload check interval is invalid! Using default value of 30 seconds.");
             overloadCheckIntervalTicks = 30 * 20L;
         }
         if (updateCheckIntervalTicks <= 0) {
-            getLogger().log(Level.WARNING, "Update check interval is invalid. Using default value of 1 day.");
+            getLogger().log(Level.WARNING, "Update check interval is invalid! Using default value of 1 day.");
             updateCheckIntervalTicks = 60 * 60 * 24 * 20L;
         }
     }
