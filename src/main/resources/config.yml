@@ -32,6 +32,6 @@ overload-detection:
   # Radius in blocks to check for targeted entities around a player
   radius: 50
   # Number of targeted entities within the radius that triggers a warning
-  critical-entity-count: 40
+  critical-entity-count: 65
   # Interval in seconds to check for entity overloads
   check-interval-seconds: 90
