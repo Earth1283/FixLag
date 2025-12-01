@@ -4,10 +4,14 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -17,12 +21,14 @@ public class TaskManager {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     private final PerformanceMonitor performanceMonitor;
+    private final DeletedItemsManager deletedItemsManager;
 
-    public TaskManager(JavaPlugin plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor) {
+    public TaskManager(JavaPlugin plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor, DeletedItemsManager deletedItemsManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.performanceMonitor = performanceMonitor;
+        this.deletedItemsManager = deletedItemsManager;
     }
 
     public void startDeletionTask() {
@@ -54,8 +60,10 @@ public class TaskManager {
     }
 
     public void deleteAndAnnounce() {
-        int deletedCount = deleteEntities();
+        List<ItemStack> deletedItems = deleteEntities();
+        int deletedCount = deletedItems.size();
         if (deletedCount > 0) {
+            deletedItemsManager.addDeletedItems(deletedItems);
             String broadcastMessage = messageManager.getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
             Bukkit.getServer().broadcast(Component.text(broadcastMessage));
             if (configManager.isLogMemoryStats()) {
@@ -65,17 +73,19 @@ public class TaskManager {
         }
     }
 
-    private int deleteEntities() {
-        int deletedEntities = 0;
+    private List<ItemStack> deleteEntities() {
+        List<ItemStack> deletedItems = new ArrayList<>();
         Set<String> entitiesToDelete = configManager.getEntitiesToDelete();
         for (World world : Bukkit.getWorlds()) {
             for (Entity entity : world.getEntities()) {
                 if (entity.isValid() && entitiesToDelete.contains(entity.getType().name())) {
+                    if (entity instanceof Item) {
+                        deletedItems.add(((Item) entity).getItemStack());
+                    }
                     entity.remove();
-                    deletedEntities++;
                 }
             }
         }
-        return deletedEntities;
+        return deletedItems;
     }
 }

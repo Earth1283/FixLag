@@ -13,6 +13,7 @@ public class FixLag extends JavaPlugin {
     private TaskManager taskManager;
     private UpdateChecker updateChecker;
     private CommandManager commandManager;
+    private DeletedItemsManager deletedItemsManager;
 
     @Override
     public void onEnable() {
@@ -20,9 +21,10 @@ public class FixLag extends JavaPlugin {
         configManager = new ConfigManager(this);
         messageManager = new MessageManager(this);
         performanceMonitor = new PerformanceMonitor(messageManager, getLogger());
-        taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor);
+        deletedItemsManager = new DeletedItemsManager(this);
+        taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager);
         updateChecker = new UpdateChecker(this, configManager, messageManager);
-        commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager);
+        commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager);
 
         // Start tasks
         taskManager.startDeletionTask();
@@ -59,5 +61,9 @@ public class FixLag extends JavaPlugin {
 
     public UpdateChecker getUpdateChecker() {
         return updateChecker;
+    }
+
+    public DeletedItemsManager getDeletedItemsManager() {
+        return deletedItemsManager;
     }
 }

@@ -13,12 +13,14 @@ public class CommandManager implements CommandExecutor {
     private final TaskManager taskManager;
     private final PerformanceMonitor performanceMonitor;
     private final MessageManager messageManager;
+    private final DeletedItemsManager deletedItemsManager;
 
-    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager) {
+    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager) {
         this.plugin = plugin;
         this.taskManager = taskManager;
         this.performanceMonitor = performanceMonitor;
         this.messageManager = messageManager;
+        this.deletedItemsManager = deletedItemsManager;
         registerCommands();
     }
 
@@ -41,7 +43,7 @@ public class CommandManager implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         switch (command.getName().toLowerCase()) {
             case "fixlag":
-                return handleFixLagCommand(sender);
+                return handleFixLagCommand(sender, args);
             case "gcinfo":
                 return handleGcİnfoCommand(sender);
             case "serverinfo":
@@ -51,19 +53,30 @@ public class CommandManager implements CommandExecutor {
         }
     }
 
-    private boolean handleFixLagCommand(CommandSender sender) {
+    private boolean handleFixLagCommand(CommandSender sender, String[] args) {
         if (!sender.hasPermission("fixlag.command")) {
-            sender.sendMessage(messageManager.getMessage("permission_denied", false));
+            sender.sendMessage(messageManager.getMessage("permission_denied"));
             return true;
         }
-        sender.sendMessage(messageManager.getMessage("entity_clear_manual", false));
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("retrieve")) {
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                deletedItemsManager.openChestGUI(player);
+            } else {
+                sender.sendMessage("This command can only be used by players.");
+            }
+            return true;
+        }
+
+        sender.sendMessage(messageManager.getMessage("entity_clear_manual"));
         taskManager.deleteAndAnnounce();
         return true;
     }
 
     private boolean handleGcİnfoCommand(CommandSender sender) {
         if (!sender.hasPermission("fixlag.gcinfo")) {
-            sender.sendMessage(messageManager.getMessage("permission_denied", false));
+            sender.sendMessage(messageManager.getMessage("permission_denied"));
             return true;
         }
         sender.sendMessage(performanceMonitor.getMemoryAndGCInfo());
@@ -72,7 +85,7 @@ public class CommandManager implements CommandExecutor {
 
     private boolean handleServerİnfoCommand(CommandSender sender) {
         if (!sender.hasPermission("fixlag.serverinfo")) {
-            sender.sendMessage(messageManager.getMessage("permission_denied", false));
+            sender.sendMessage(messageManager.getMessage("permission_denied"));
             return true;
         }
         sender.sendMessage(performanceMonitor.getServerInfo());

@@ -2,8 +2,10 @@
 
 prefix: "<#87CEEB>[<#90EE90>ꜰɪxʟᴀɢ</#90EE90>] </#87CEEB><reset>"
 entity_clear_manual: "<green>Manually cleared unnecessary entities..."
-entity_clear_broadcast: "<green>Cleaned up <dark_green>%fixlag_count% <green>unnecessary entities."
+entity_clear_broadcast: "<green>Cleaned up <dark_green>%fixlag_count% <green>unnecessary entities. Use <gold>/fixlag retrieve</gold> to recover them."
 entity_clear_warning: "<yellow>Entities will be cleared in <gold>%fixlag_time% <yellow>seconds."
+retrieve_command_in_cooldown: "<red>You can't use this command while the items are being collected."
+retrieve_command_no_items: "<red>There are no items to retrieve."
 permission_denied: "<red>You do not have permission to use this command."
 gc_info_header: "<yellow>--- JVM Memory & GC Info ---"
 server_info_header: "<yellow>--- Server Information ---"
