@@ -47,7 +47,7 @@ public class TaskManager {
 
     private void sendWarning() {
         long warningTimeSeconds = configManager.getWarningTimeTicks() / 20L;
-        String formattedMessage = messageManager.getMessage("entity_clear_warning", "%time%", String.valueOf(warningTimeSeconds));
+        String formattedMessage = messageManager.getMessage("entity_clear_warning", "%fixlag_time%", String.valueOf(warningTimeSeconds));
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(formattedMessage);
         }
@@ -56,12 +56,12 @@ public class TaskManager {
     public void deleteAndAnnounce() {
         int deletedCount = deleteEntities();
         if (deletedCount > 0) {
-            String broadcastMessage = messageManager.getMessage("entity_clear_broadcast", "%count%", String.valueOf(deletedCount));
+            String broadcastMessage = messageManager.getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
             Bukkit.getServer().broadcast(Component.text(broadcastMessage));
             if (configManager.isLogMemoryStats()) {
                 performanceMonitor.logMemoryUsage();
             }
-            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_entity_deleted", "%count%", String.valueOf(deletedCount)));
+            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
         }
     }
 

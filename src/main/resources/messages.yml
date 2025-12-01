@@ -1,22 +1,22 @@
 # Use Minecraft color codes or MiniMessage color codes
 
 prefix: "<#87CEEB>[<#90EE90>ꜰɪxʟᴀɢ</#90EE90>] </#87CEEB><reset>"
-entity_clear_manual: "&aManually cleared unnecessary entities..."
-entity_clear_broadcast: "&aCleaned up &2%fixlag_count% &aunnecessary entities."
-entity_clear_warning: "&eEntities will be cleared in &6%fixlag_time% &eseconds."
-permission_denied: "&cYou do not have permission to use this command."
-gc_info_header: "&e--- JVM Memory & GC Info ---"
-server_info_header: "&e--- Server Information ---"
-server_info_tps: "&aTPS (Last 1m, 5m, 15m): &f%fixlag_tps_1m%, %fixlag_tps_5m%, %fixlag_tps_15m%"
-server_info_mspt: "&aMSPT (Last 1m): &f%fixlag_mspt_1m% ms" # Consider updating this
-server_info_mspt_5m: "&aMSPT (Last 5m): &f%fixlag_mspt_5m% ms" # New key
-server_info_mspt_15m: "&aMSPT (Last 15m): &f%fixlag_mspt_15m% ms" # New key
-server_info_ram: "&aRAM Usage: &f%fixlag_used_ram%MB / %fixlag_total_ram%MB [%fixlag_ram_percentage%]"
-server_info_cpu: "&aCPU Usage: &f%fixlag_cpu_usage%"
-update_available: "&eA new version of FixLag is available: &6%fixlag_latest_version%"
-update_current_version: "&eYou are currently using version: &6%fixlag_current_version%"
-update_check_failed: "&cCould not check for updates."
-update_check_error: "&cError checking for updates: %fixlag_error%."
+entity_clear_manual: "<green>Manually cleared unnecessary entities..."
+entity_clear_broadcast: "<green>Cleaned up <dark_green>%fixlag_count% <green>unnecessary entities."
+entity_clear_warning: "<yellow>Entities will be cleared in <gold>%fixlag_time% <yellow>seconds."
+permission_denied: "<red>You do not have permission to use this command."
+gc_info_header: "<yellow>--- JVM Memory & GC Info ---"
+server_info_header: "<yellow>--- Server Information ---"
+server_info_tps: "<green>TPS (Last 1m, 5m, 15m): <white>%fixlag_tps_1m%, %fixlag_tps_5m%, %fixlag_tps_15m%"
+server_info_mspt: "<green>MSPT (Last 1m): <white>%fixlag_mspt_1m% ms" # Consider updating this
+server_info_mspt_5m: "<green>MSPT (Last 5m): <white>%fixlag_mspt_5m% ms" # New key
+server_info_mspt_15m: "<green>MSPT (Last 15m): <white>%fixlag_mspt_15m% ms" # New key
+server_info_ram: "<green>RAM Usage: <white>%fixlag_used_ram%MB / %fixlag_total_ram%MB [%fixlag_ram_percentage%]"
+server_info_cpu: "<green>CPU Usage: <white>%fixlag_cpu_usage%"
+update_available: "<yellow>A new version of FixLag is available: <gold>%fixlag_latest_version%"
+update_current_version: "<yellow>You are currently using version: <gold>%fixlag_current_version%"
+update_check_failed: "<red>Could not check for updates."
+update_check_error: "<red>Error checking for updates: %fixlag_error%."
 log_entity_deleted: "Deleted %fixlag_count% unnecessary entities."
 log_update_available: "A new version of FixLag is available: %fixlag_version%. Download <hover:show_text:'<#90EE90>Click to download from the official Modrinth project</#90EE90>'><click:open_url:'https://modrinth.com/plugin/fixlag/'>here</click></hover>"
 log_update_uptodate: "FixLag is up to date."

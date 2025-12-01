@@ -36,7 +36,7 @@ public class UpdateChecker {
                     String latestVersion = getLatestVersion();
                     if (latestVersion != null) {
                         if (!plugin.getDescription().getVersion().equals(latestVersion)) {
-                            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_update_available", "%version%", latestVersion));
+                            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_update_available", "%fixlag_version%", latestVersion));
                             notifyUpdate(latestVersion);
                         } else {
                             plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_update_uptodate"));
@@ -45,7 +45,7 @@ public class UpdateChecker {
                         plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_update_check_failed"));
                     }
                 } catch (IOException e) {
-                    plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_update_check_error", "%error%", e.getMessage()));
+                    plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_update_check_error", "%fixlag_error%", e.getMessage()));
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 0L, configManager.getUpdateCheckIntervalTicks());
@@ -69,8 +69,8 @@ public class UpdateChecker {
     }
 
     private void notifyUpdate(String latestVersion) {
-        String message = messageManager.getMessage("update_available", "%latest_version%", latestVersion) +
-                messageManager.getMessage("update_current_version", "%current_version%", plugin.getDescription().getVersion());
+        String message = messageManager.getMessage("update_available", "%fixlag_latest_version%", latestVersion) +
+                messageManager.getMessage("update_current_version", "%fixlag_current_version%", plugin.getDescription().getVersion());
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isOp() || player.hasPermission("fixlag.notify.update")) {
                 player.sendMessage(message);

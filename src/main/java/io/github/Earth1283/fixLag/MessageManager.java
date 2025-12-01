@@ -3,7 +3,6 @@ package io.github.Earth1283.fixLag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -59,7 +58,7 @@ public class MessageManager {
             }
         }
         Component comp = miniMessage.deserialize(raw);
-        return PlainTextComponentSerializer.plainText().serialize(comp);
+        return legacySerializer.serialize(comp);
     }
 
     public String getRawMessage(String key) {

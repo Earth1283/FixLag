@@ -116,15 +116,15 @@ public class PerformanceMonitor {
                 "<aqua>OS Architecture: <green>" + osArch + "</green></aqua>\n" +
                 "<aqua>OS Name: <green>" + osName + "</green></aqua>\n" +
                 messageManager.getRawMessage("server_info_tps")
-                        .replace("%tps_1m%", formatDouble(tps[0]))
-                        .replace("%tps_5m%", formatDouble(tps[1]))
-                        .replace("%tps_15m%", formatDouble(tps[2])) + "\n" +
+                        .replace("%fixlag_tps_1m%", formatDouble(tps[0]))
+                        .replace("%fixlag_tps_5m%", formatDouble(tps[1]))
+                        .replace("%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
                 messageManager.getRawMessage("server_info_ram")
-                        .replace("%used_ram%", String.valueOf(usedMemory))
-                        .replace("%total_ram%", String.valueOf(totalMemory))
-                        .replace("%ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
+                        .replace("%fixlag_used_ram%", String.valueOf(usedMemory))
+                        .replace("%fixlag_total_ram%", String.valueOf(totalMemory))
+                        .replace("%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
                 messageManager.getRawMessage("server_info_cpu")
-                        .replace("%cpu_usage%", cpuUsage);
+                        .replace("%fixlag_cpu_usage%", cpuUsage);
 
         Component comp = miniMessage.deserialize(raw);
         return legacySerializer.serialize(comp);
