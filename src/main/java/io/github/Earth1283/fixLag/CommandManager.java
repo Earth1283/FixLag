@@ -4,10 +4,15 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class CommandManager implements CommandExecutor {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class CommandManager implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
     private final TaskManager taskManager;
@@ -28,6 +33,7 @@ public class CommandManager implements CommandExecutor {
         PluginCommand fixlag = plugin.getCommand("fixlag");
         if (fixlag != null) {
             fixlag.setExecutor(this);
+            fixlag.setTabCompleter(this);
         }
         PluginCommand gcinfo = plugin.getCommand("gcinfo");
         if (gcinfo != null) {
@@ -53,19 +59,35 @@ public class CommandManager implements CommandExecutor {
         }
     }
 
-    private boolean handleFixLagCommand(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("fixlag.command")) {
-            sender.sendMessage(messageManager.getMessage("permission_denied"));
-            return true;
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (command.getName().equalsIgnoreCase("fixlag")) {
+            if (args.length == 1) {
+                List<String> subcommands = new ArrayList<>(Arrays.asList("retrieve", "reload"));
+                subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[0].toLowerCase()));
+                return subcommands;
+            }
         }
+        return null;
+    }
 
+    private boolean handleFixLagCommand(CommandSender sender, String[] args) {
         if (args.length > 0 && args[0].equalsIgnoreCase("retrieve")) {
+            if (!sender.hasPermission("fixlag.retrieve")) {
+                sender.sendMessage(messageManager.getMessage("permission_denied"));
+                return true;
+            }
             if (sender instanceof Player) {
                 Player player = (Player) sender;
                 deletedItemsManager.openChestGUI(player);
             } else {
                 sender.sendMessage("This command can only be used by players.");
             }
+            return true;
+        }
+
+        if (!sender.hasPermission("fixlag.command")) {
+            sender.sendMessage(messageManager.getMessage("permission_denied"));
             return true;
         }
 
