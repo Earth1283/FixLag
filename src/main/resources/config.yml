@@ -8,6 +8,10 @@ entities-to-delete:
   - BAT # These are a pain when more chunks are loaded
   # Add more entity types as needed
 
+# Whether to ignore items that have been renamed (e.g. via Anvil or Name Tag).
+# If set to true, entities with custom names will NOT be deleted.
+ignore-custom-named-items: true
+
 # Interval in seconds between entity deletion checks
 deletion-interval-seconds: 180 # 3 min
 

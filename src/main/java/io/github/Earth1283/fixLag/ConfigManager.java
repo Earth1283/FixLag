@@ -11,6 +11,7 @@ public class ConfigManager {
 
     private final JavaPlugin plugin;
     private Set<String> entitiesToDelete;
+    private boolean ignoreCustomNamedItems;
     private long deletionIntervalTicks;
     private boolean enableWarning;
     private long warningTimeTicks;
@@ -51,6 +52,7 @@ public class ConfigManager {
         plugin.reloadConfig();
 
         entitiesToDelete = new HashSet<>(config.getStringList("entities-to-delete"));
+        ignoreCustomNamedItems = config.getBoolean("ignore-custom-named-items", true);
         deletionIntervalTicks = config.getLong("deletion-interval-seconds", 60) * 20L;
         enableWarning = config.getBoolean("enable-warning", true);
         warningTimeTicks = config.getLong("warning-time-seconds", 5) * 20L;
@@ -96,6 +98,10 @@ public class ConfigManager {
 
     public Set<String> getEntitiesToDelete() {
         return entitiesToDelete;
+    }
+
+    public boolean isIgnoreCustomNamedItems() {
+        return ignoreCustomNamedItems;
     }
 
     public long getDeletionIntervalTicks() {

@@ -1,9 +1,9 @@
 name: FixLag
-version: 3.6
+version: 3.6.2
 main: io.github.Earth1283.fixLag.FixLag
 api-version: 1.17
 author: Earth1283
-description: Regularly deletes specified entities to reduce lag to make server owners' lives easier
+description: Fixing lag without breaking farms!
 permissions:
   fixlag.overload.exempt:
     description: Players with this permission will not trigger overload warnings.

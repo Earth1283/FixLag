@@ -101,6 +101,10 @@ public class TaskManager {
         for (World world : Bukkit.getWorlds()) {
             for (Entity entity : world.getEntities()) {
                 if (entity.isValid() && entitiesToDelete.contains(entity.getType().name())) {
+                    if (configManager.isIgnoreCustomNamedItems() && entity.customName() != null) {
+                        continue;
+                    }
+
                     if (entity instanceof Item) {
                         deletedItems.add(((Item) entity).getItemStack());
                     }
