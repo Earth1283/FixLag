@@ -23,3 +23,35 @@ log_entity_deleted: "Deleted %fixlag_count% unnecessary entities."
 log_update_available: "A new version of FixLag is available: %fixlag_version%. Download <hover:show_text:'<#90EE90>Click to download from the official Modrinth project</#90EE90>'><click:open_url:'https://modrinth.com/plugin/fixlag/'>here</click></hover>"
 log_update_uptodate: "FixLag is up to date."
 log_update_check_failed: "Could not check for updates."
+
+# New Messages
+command_player_only: "<red>This command can only be run by a player."
+overload_warning: "<red>Warning! High number of targeted entities (<count>) detected near player <player>."
+
+# Performance Info Bodies
+gc_info_body: |
+  <aqua>Garbage Collector: <green><gc_type></green></aqua>
+  <aqua>Heap Memory:</aqua> Used=<green><used_heap>MB</green>, Free=<green><free_heap>MB</green>, Max=<green><max_heap>MB</green>
+  <aqua>Non-Heap Memory:</aqua> Used=<green><used_non_heap>MB</green>, Free=<green><free_non_heap></green>, Max=<green><max_non_heap></green>
+  <aqua>GC Stats:</aqua>
+  <gc_stats>
+
+server_info_body: |
+  <aqua>JVM Version: <green><jvm_version></green></aqua>
+  <aqua>JVM Name: <green><jvm_name></green></aqua>
+  <aqua>OS Architecture: <green><os_arch></green></aqua>
+  <aqua>OS Name: <green><os_name></green></aqua>
+  %fixlag_tps_line%
+  %fixlag_ram_line%
+  %fixlag_cpu_line%
+
+# Logs
+log_memory_stats: "Memory Stats - Heap: Used=<used_heap>MB, Free=<free_heap>MB, Max=<max_heap>MB | Non-Heap: Used=<used_non_heap>MB, Free=<free_non_heap>, Max=<max_non_heap> | GC: <gc_stats>"
+log_plugin_enabled: "FixLag plugin has been enabled!"
+log_plugin_disabled: "FixLag plugin has been disabled!"
+log_plugin_goodbye: "Goodbye!"
+log_smart_clear_triggered: "TPS is low (<tps>). Triggering smart clear."
+log_config_invalid_deletion_interval: "Deletion interval is invalid! Using default value of 60 seconds."
+log_config_invalid_warning_time: "Warning time is invalid! Using default value of 5 seconds."
+log_config_invalid_overload_interval: "Overload check interval is invalid! Using default value of 30 seconds."
+log_config_invalid_update_interval: "Update check interval is invalid! Using default value of 1 day."

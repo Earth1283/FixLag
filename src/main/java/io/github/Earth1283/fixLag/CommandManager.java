@@ -81,7 +81,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 Player player = (Player) sender;
                 deletedItemsManager.openChestGUI(player);
             } else {
-                sender.sendMessage("This command can only be used by players.");
+                sender.sendMessage(messageManager.getMessage("command_player_only"));
             }
             return true;
         }

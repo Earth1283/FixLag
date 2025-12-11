@@ -29,6 +29,19 @@ public class MessageManager {
             plugin.saveResource("messages.yml", false);
         }
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        
+        // Update messages with missing keys
+        try {
+            java.io.InputStream defConfigStream = plugin.getResource("messages.yml");
+            if (defConfigStream != null) {
+                YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(defConfigStream));
+                messagesConfig.setDefaults(defConfig);
+                messagesConfig.options().copyDefaults(true);
+                messagesConfig.save(messagesFile);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Could not update messages.yml: " + e.getMessage());
+        }
     }
 
     public String getMessage(String key, boolean includePrefix, String... replacements) {

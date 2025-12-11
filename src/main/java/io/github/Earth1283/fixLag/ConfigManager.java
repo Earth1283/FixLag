@@ -19,14 +19,35 @@ public class ConfigManager {
     private long updateCheckIntervalTicks;
     private String updateUrl;
 
-    public ConfigManager(JavaPlugin plugin) {
+    // Mob Stacking Config
+    private boolean mobStackingEnabled;
+    private int mobStackingRadius;
+    private int mobStackingMaxStackSize;
+    private Set<String> mobStackingAllowedEntities;
+    private String mobStackingNameFormat;
+
+    // Smart Clear Config
+    private boolean smartClearEnabled;
+    private double smartClearTpsThreshold;
+    private long smartClearCheckIntervalTicks;
+    private long smartClearCooldownTicks;
+
+    private final MessageManager messageManager;
+
+    public ConfigManager(JavaPlugin plugin, MessageManager messageManager) {
         this.plugin = plugin;
+        this.messageManager = messageManager;
         loadConfig();
     }
 
     public void loadConfig() {
         plugin.saveDefaultConfig();
         FileConfiguration config = plugin.getConfig();
+        
+        // Update config with missing keys
+        config.options().copyDefaults(true);
+        plugin.saveConfig();
+        
         plugin.reloadConfig();
 
         entitiesToDelete = new HashSet<>(config.getStringList("entities-to-delete"));
@@ -38,24 +59,37 @@ public class ConfigManager {
         updateCheckIntervalTicks = config.getLong("update-check-interval-seconds", 60 * 60 * 24) * 20L;
         updateUrl = config.getString("update-url", "https://api.modrinth.com/v2/project/fixlag/version");
 
+        // Load Mob Stacking Config
+        mobStackingEnabled = config.getBoolean("mob-stacking.enabled", true);
+        mobStackingRadius = config.getInt("mob-stacking.radius", 10);
+        mobStackingMaxStackSize = config.getInt("mob-stacking.max-stack-size", 50);
+        mobStackingAllowedEntities = new HashSet<>(config.getStringList("mob-stacking.allowed-entities"));
+        mobStackingNameFormat = config.getString("mob-stacking.name-format", "&e%type% &6x%count%");
+
+        // Load Smart Clear Config
+        smartClearEnabled = config.getBoolean("smart-clear.enabled", true);
+        smartClearTpsThreshold = config.getDouble("smart-clear.tps-threshold", 16.0);
+        smartClearCheckIntervalTicks = config.getLong("smart-clear.check-interval-seconds", 10) * 20L;
+        smartClearCooldownTicks = config.getLong("smart-clear.cooldown-seconds", 300) * 20L;
+
         validateConfigValues();
     }
 
     private void validateConfigValues() {
         if (deletionIntervalTicks <= 0) {
-            plugin.getLogger().log(Level.WARNING, "Deletion interval is invalid! Using default value of 60 seconds.");
+            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_deletion_interval"));
             deletionIntervalTicks = 60 * 20L;
         }
         if (warningTimeTicks < 0) {
-            plugin.getLogger().log(Level.WARNING, "Warning time is invalid! Using default value of 5 seconds.");
+            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_warning_time"));
             warningTimeTicks = 5 * 20L;
         }
         if (overloadCheckIntervalTicks <= 0) {
-            plugin.getLogger().log(Level.WARNING, "Overload check interval is invalid! Using default value of 30 seconds.");
+            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_overload_interval"));
             overloadCheckIntervalTicks = 30 * 20L;
         }
         if (updateCheckIntervalTicks <= 0) {
-            plugin.getLogger().log(Level.WARNING, "Update check interval is invalid! Using default value of 1 day.");
+            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_update_interval"));
             updateCheckIntervalTicks = 60 * 60 * 24 * 20L;
         }
     }
@@ -90,5 +124,43 @@ public class ConfigManager {
 
     public String getUpdateUrl() {
         return updateUrl;
+    }
+
+    // Mob Stacking Getters
+    public boolean isMobStackingEnabled() {
+        return mobStackingEnabled;
+    }
+
+    public int getMobStackingRadius() {
+        return mobStackingRadius;
+    }
+
+    public int getMobStackingMaxStackSize() {
+        return mobStackingMaxStackSize;
+    }
+
+    public Set<String> getMobStackingAllowedEntities() {
+        return mobStackingAllowedEntities;
+    }
+
+    public String getMobStackingNameFormat() {
+        return mobStackingNameFormat;
+    }
+
+    // Smart Clear Getters
+    public boolean isSmartClearEnabled() {
+        return smartClearEnabled;
+    }
+
+    public double getSmartClearTpsThreshold() {
+        return smartClearTpsThreshold;
+    }
+
+    public long getSmartClearCheckIntervalTicks() {
+        return smartClearCheckIntervalTicks;
+    }
+
+    public long getSmartClearCooldownTicks() {
+        return smartClearCooldownTicks;
     }
 }

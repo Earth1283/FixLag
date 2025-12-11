@@ -22,6 +22,7 @@ public class TaskManager {
     private final MessageManager messageManager;
     private final PerformanceMonitor performanceMonitor;
     private final DeletedItemsManager deletedItemsManager;
+    private long lastSmartClearTime = 0;
 
     public TaskManager(JavaPlugin plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor, DeletedItemsManager deletedItemsManager) {
         this.plugin = plugin;
@@ -49,6 +50,27 @@ public class TaskManager {
                 Bukkit.getScheduler().runTaskLater(plugin, TaskManager.this::deleteAndAnnounce, configManager.getDeletionIntervalTicks());
             }
         }.runTaskTimer(plugin, 0L, configManager.getDeletionIntervalTicks());
+    }
+
+    public void startSmartClearTask() {
+        if (!configManager.isSmartClearEnabled()) return;
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                double tps = Bukkit.getServer().getTPS()[0]; // 1m average
+                if (tps < configManager.getSmartClearTpsThreshold()) {
+                    long currentTime = System.currentTimeMillis();
+                    long cooldownMillis = configManager.getSmartClearCooldownTicks() / 20 * 1000;
+
+                    if (currentTime - lastSmartClearTime >= cooldownMillis) {
+                        plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_smart_clear_triggered", "<tps>", String.format("%.2f", tps)));
+                        deleteAndAnnounce();
+                        lastSmartClearTime = currentTime;
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, configManager.getSmartClearCheckIntervalTicks(), configManager.getSmartClearCheckIntervalTicks());
     }
 
     private void sendWarning() {

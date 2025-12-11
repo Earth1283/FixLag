@@ -56,11 +56,17 @@ public class PerformanceMonitor {
         }
 
         String headerRaw = messageManager.getRawMessage("gc_info_header");
-        String raw = headerRaw + "\n" +
-                "<aqua>Garbage Collector: <green>" + gcType.toString() + "</green></aqua>\n" +
-                "<aqua>Heap Memory:</aqua> Used=<green>" + usedHeapMB + "MB</green>, Free=<green>" + freeHeapMB + "MB</green>, Max=<green>" + maxHeapMB + "MB</green>\n" +
-                "<aqua>Non-Heap Memory:</aqua> Used=<green>" + usedNonHeapMB + "MB</green>, Free=<green>" + (freeNonHeapMB <= 0 ? "N/A" : freeNonHeapMB + "MB") + "</green>, Max=<green>" + (maxNonHeapMB <= 0 ? "N/A" : maxNonHeapMB + "MB") + "</green>\n" +
-                "<aqua>GC Stats:</aqua>\n" + gcStats.toString();
+        String bodyRaw = messageManager.getRawMessage("gc_info_body");
+        
+        String raw = headerRaw + "\n" + bodyRaw
+                .replace("<gc_type>", gcType.toString())
+                .replace("<used_heap>", String.valueOf(usedHeapMB))
+                .replace("<free_heap>", String.valueOf(freeHeapMB))
+                .replace("<max_heap>", String.valueOf(maxHeapMB))
+                .replace("<used_non_heap>", String.valueOf(usedNonHeapMB))
+                .replace("<free_non_heap>", freeNonHeapMB <= 0 ? "N/A" : freeNonHeapMB + "MB")
+                .replace("<max_non_heap>", maxNonHeapMB <= 0 ? "N/A" : maxNonHeapMB + "MB")
+                .replace("<gc_stats>", gcStats.toString());
 
         Component comp = miniMessage.deserialize(raw);
         return legacySerializer.serialize(comp);
@@ -88,7 +94,15 @@ public class PerformanceMonitor {
             gcStats.setLength(gcStats.length() - 3);
         }
 
-        logger.log(Level.INFO, "Memory Stats - Heap: Used=" + usedHeapMB + "MB, Free=" + freeHeapMB + "MB, Max=" + maxHeapMB + "MB | Non-Heap: Used=" + usedNonHeapMB + "MB, Free=" + (freeNonHeapMB <= 0 ? "N/A" : freeNonHeapMB + "MB") + ", Max=" + (maxNonHeapMB <= 0 ? "N/A" : maxNonHeapMB + "MB") + " | GC: " + gcStats.toString());
+        logger.log(Level.INFO, messageManager.getLogMessage("log_memory_stats",
+                "<used_heap>", String.valueOf(usedHeapMB),
+                "<free_heap>", String.valueOf(freeHeapMB),
+                "<max_heap>", String.valueOf(maxHeapMB),
+                "<used_non_heap>", String.valueOf(usedNonHeapMB),
+                "<free_non_heap>", freeNonHeapMB <= 0 ? "N/A" : freeNonHeapMB + "MB",
+                "<max_non_heap>", maxNonHeapMB <= 0 ? "N/A" : maxNonHeapMB + "MB",
+                "<gc_stats>", gcStats.toString()
+        ));
     }
 
     private String formatDouble(double d) {
@@ -110,21 +124,30 @@ public class PerformanceMonitor {
         String cpuUsage = (cpuLoad >= 0) ? formatDouble(cpuLoad * 100 / ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()) + "%" : "Unavailable";
 
         String headerRaw = messageManager.getRawMessage("server_info_header");
-        String raw = headerRaw + "\n" +
-                "<aqua>JVM Version: <green>" + jvmVersion + "</green></aqua>\n" +
-                "<aqua>JVM Name: <green>" + jvmName + "</green></aqua>\n" +
-                "<aqua>OS Architecture: <green>" + osArch + "</green></aqua>\n" +
-                "<aqua>OS Name: <green>" + osName + "</green></aqua>\n" +
-                messageManager.getRawMessage("server_info_tps")
-                        .replace("%fixlag_tps_1m%", formatDouble(tps[0]))
-                        .replace("%fixlag_tps_5m%", formatDouble(tps[1]))
-                        .replace("%fixlag_tps_15m%", formatDouble(tps[2])) + "\n" +
-                messageManager.getRawMessage("server_info_ram")
-                        .replace("%fixlag_used_ram%", String.valueOf(usedMemory))
-                        .replace("%fixlag_total_ram%", String.valueOf(totalMemory))
-                        .replace("%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
-                messageManager.getRawMessage("server_info_cpu")
-                        .replace("%fixlag_cpu_usage%", cpuUsage);
+        
+        String tpsLine = messageManager.getRawMessage("server_info_tps")
+                .replace("%fixlag_tps_1m%", formatDouble(tps[0]))
+                .replace("%fixlag_tps_5m%", formatDouble(tps[1]))
+                .replace("%fixlag_tps_15m%", formatDouble(tps[2]));
+                
+        String ramLine = messageManager.getRawMessage("server_info_ram")
+                .replace("%fixlag_used_ram%", String.valueOf(usedMemory))
+                .replace("%fixlag_total_ram%", String.valueOf(totalMemory))
+                .replace("%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage));
+                
+        String cpuLine = messageManager.getRawMessage("server_info_cpu")
+                .replace("%fixlag_cpu_usage%", cpuUsage);
+        
+        String bodyRaw = messageManager.getRawMessage("server_info_body");
+
+        String raw = headerRaw + "\n" + bodyRaw
+                .replace("<jvm_version>", jvmVersion)
+                .replace("<jvm_name>", jvmName)
+                .replace("<os_arch>", osArch)
+                .replace("<os_name>", osName)
+                .replace("%fixlag_tps_line%", tpsLine)
+                .replace("%fixlag_ram_line%", ramLine)
+                .replace("%fixlag_cpu_line%", cpuLine);
 
         Component comp = miniMessage.deserialize(raw);
         return legacySerializer.serialize(comp);
