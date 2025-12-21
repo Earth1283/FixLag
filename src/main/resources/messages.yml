@@ -15,6 +15,9 @@ server_info_mspt_5m: "<green>MSPT (Last 5m): <white>%fixlag_mspt_5m% ms" # New k
 server_info_mspt_15m: "<green>MSPT (Last 15m): <white>%fixlag_mspt_15m% ms" # New key
 server_info_ram: "<green>RAM Usage: <white>%fixlag_used_ram%MB / %fixlag_total_ram%MB [%fixlag_ram_percentage%]"
 server_info_cpu: "<green>CPU Usage: <white>%fixlag_cpu_usage%"
+server_info_ping: "<green>Average Ping: <white>%fixlag_avg_ping% ms"
+server_info_world_header: "<aqua>World Stats:</aqua>"
+server_info_world_entry: " <gray>- <gold>%fixlag_world_name%<gray>: <white>%fixlag_world_chunks% Chunks, %fixlag_world_entities% Entities"
 update_available: "<yellow>A new version of FixLag is available: <gold>%fixlag_latest_version%"
 update_current_version: "<yellow>You are currently using version: <gold>%fixlag_current_version%"
 update_check_failed: "<red>Could not check for updates."

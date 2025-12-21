@@ -109,6 +109,27 @@ public class PerformanceMonitor {
         double cpuLoad = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
         String cpuUsage = (cpuLoad >= 0) ? formatDouble(cpuLoad * 100 / ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()) + "%" : "Unavailable";
 
+        // Calculate Average Ping
+        int totalPing = 0;
+        int playerCount = Bukkit.getOnlinePlayers().size();
+        if (playerCount > 0) {
+            for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
+                totalPing += p.getPing();
+            }
+        }
+        int avgPing = playerCount > 0 ? totalPing / playerCount : 0;
+
+        // Calculate World Stats
+        StringBuilder worldStats = new StringBuilder();
+        worldStats.append(messageManager.getRawMessage("server_info_world_header")).append("\n");
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
+            String worldEntry = messageManager.getRawMessage("server_info_world_entry")
+                    .replace("%fixlag_world_name%", world.getName())
+                    .replace("%fixlag_world_chunks%", String.valueOf(world.getLoadedChunks().length))
+                    .replace("%fixlag_world_entities%", String.valueOf(world.getEntityCount()));
+            worldStats.append(worldEntry).append("\n");
+        }
+
         String headerRaw = messageManager.getRawMessage("server_info_header");
         String raw = headerRaw + "\n" +
                 "<aqua>JVM Version: <green>" + jvmVersion + "</green></aqua>\n" +
@@ -124,7 +145,10 @@ public class PerformanceMonitor {
                         .replace("%fixlag_total_ram%", String.valueOf(totalMemory))
                         .replace("%fixlag_ram_percentage%", formatDouble(memoryUsagePercentage)) + "\n" +
                 messageManager.getRawMessage("server_info_cpu")
-                        .replace("%fixlag_cpu_usage%", cpuUsage);
+                        .replace("%fixlag_cpu_usage%", cpuUsage) + "\n" +
+                messageManager.getRawMessage("server_info_ping")
+                        .replace("%fixlag_avg_ping%", String.valueOf(avgPing)) + "\n" +
+                worldStats.toString();
 
         Component comp = miniMessage.deserialize(raw);
         return legacySerializer.serialize(comp);
