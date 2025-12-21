@@ -88,7 +88,7 @@ public class OverloadChecker {
 
                                 // If overload detected, notify staff
                                 if (finalCount > criticalEntityCount) {
-                                    String message = ChatColor.RED + "Warning! High number of targeted entities (" + finalCount + ") detected near player " + p.getName() + ".";
+                                    String message = plugin.getMessageManager().getMessage("overload_warning", "<count>", String.valueOf(finalCount), "<player>", p.getName());
                                     // Notify staff on the main thread
                                     for (Player staff : Bukkit.getOnlinePlayers()) {
                                         // Check if staff player is still online and has permission/is op

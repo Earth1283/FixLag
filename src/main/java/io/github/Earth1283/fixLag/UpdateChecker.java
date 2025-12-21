@@ -69,7 +69,7 @@ public class UpdateChecker {
     }
 
     private void notifyUpdate(String latestVersion) {
-        String message = messageManager.getMessage("update_available", "%fixlag_latest_version%", latestVersion) +
+        String message = messageManager.getMessage("update_available", "%fixlag_latest_version%", latestVersion) + "\n" +
                 messageManager.getMessage("update_current_version", "%fixlag_current_version%", plugin.getDescription().getVersion());
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isOp() || player.hasPermission("fixlag.notify.update")) {

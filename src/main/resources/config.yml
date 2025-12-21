@@ -8,6 +8,10 @@ entities-to-delete:
   - BAT # These are a pain when more chunks are loaded
   # Add more entity types as needed
 
+# Whether to ignore items that have been renamed (e.g. via Anvil or Name Tag).
+# If set to true, entities with custom names will NOT be deleted.
+ignore-custom-named-items: true
+
 # Interval in seconds between entity deletion checks
 deletion-interval-seconds: 180 # 3 min
 
@@ -35,3 +39,44 @@ overload-detection:
   critical-entity-count: 65
   # Interval in seconds to check for entity overloads
   check-interval-seconds: 90
+
+# Configuration for Mob Stacking
+mob-stacking:
+  enabled: false
+  radius: 10
+  max-stack-size: 50
+  # List of entity types to stack (use uppercase Bukkit EntityType names)
+  allowed-entities:
+    - ZOMBIE
+    - SKELETON
+    - CREEPER
+    - SPIDER
+    - COW
+    - SHEEP
+    - PIG
+    - CHICKEN
+  # Display format for the stack name.
+  # %type% - Entity type name (capitalized)
+  # %count% - Stack size
+  name-format: "&e%type% &6x%count%"
+
+# Smart Clear: Automatically clears entities when TPS (Ticks Per Second) drops below a defined threshold.
+# This acts as a reactive lag prevention measure, triggering entity cleanup when the server is struggling.
+smart-clear:
+  # Enable or disable the Smart Clear feature.
+  enabled: true
+
+  # The TPS (Ticks Per Second) threshold. If the server's 1-minute average TPS drops below this value,
+  # the Smart Clear will be triggered (assuming cooldown is respected).
+  # A healthy server runs at 20.0 TPS. Values like 16.0 - 18.0 are common.
+  tps-threshold: 16.0
+
+  # How often (in seconds) the plugin will check the server's current TPS.
+  # A lower value means faster reaction to lag spikes, but slightly more frequent checks.
+  check-interval-seconds: 10
+
+  # The cooldown period (in seconds) after a Smart Clear has been triggered.
+  # The plugin will not trigger another Smart Clear until this cooldown has passed,
+  # even if the TPS remains below the threshold. This prevents excessive cleanups.
+  # Example: 300 seconds = 5 minutes.
+  cooldown-seconds: 300
