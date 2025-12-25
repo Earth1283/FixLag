@@ -18,6 +18,9 @@ deletion-interval-seconds: 180 # 3 min
 # Enable sending a warning message to players before entity deletion
 enable-warning: true
 
+# Type of notification: CHAT or ACTION_BAR
+notification-type: CHAT
+
 # Message to send to players before entity deletion.
 # Use %time% as a placeholder for the warning time in seconds.
 # You can use color codes (e.g., &e for yellow, &6 for gold).

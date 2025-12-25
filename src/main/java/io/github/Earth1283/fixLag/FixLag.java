@@ -15,6 +15,7 @@ public class FixLag extends JavaPlugin {
     private CommandManager commandManager;
     private DeletedItemsManager deletedItemsManager;
     private MobStacker mobStacker;
+    private ChunkAnalyzer chunkAnalyzer;
 
     @Override
     public void onEnable() {
@@ -23,9 +24,10 @@ public class FixLag extends JavaPlugin {
         configManager = new ConfigManager(this, messageManager);
         performanceMonitor = new PerformanceMonitor(messageManager, getLogger());
         deletedItemsManager = new DeletedItemsManager(this);
+        chunkAnalyzer = new ChunkAnalyzer(this, messageManager);
         taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager);
         updateChecker = new UpdateChecker(this, configManager, messageManager);
-        commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager);
+        commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager, chunkAnalyzer);
         mobStacker = new MobStacker(this, configManager);
 
         // Register events

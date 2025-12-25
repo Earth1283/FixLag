@@ -19,13 +19,15 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     private final PerformanceMonitor performanceMonitor;
     private final MessageManager messageManager;
     private final DeletedItemsManager deletedItemsManager;
+    private final ChunkAnalyzer chunkAnalyzer;
 
-    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager) {
+    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager, ChunkAnalyzer chunkAnalyzer) {
         this.plugin = plugin;
         this.taskManager = taskManager;
         this.performanceMonitor = performanceMonitor;
         this.messageManager = messageManager;
         this.deletedItemsManager = deletedItemsManager;
+        this.chunkAnalyzer = chunkAnalyzer;
         registerCommands();
     }
 
@@ -63,7 +65,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getName().equalsIgnoreCase("fixlag")) {
             if (args.length == 1) {
-                List<String> subcommands = new ArrayList<>(Arrays.asList("retrieve", "reload"));
+                List<String> subcommands = new ArrayList<>(Arrays.asList("retrieve", "reload", "checkchunks"));
                 subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[0].toLowerCase()));
                 return subcommands;
             }
@@ -72,6 +74,15 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleFixLagCommand(CommandSender sender, String[] args) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("checkchunks")) {
+            if (!sender.hasPermission("fixlag.checkchunks")) {
+                sender.sendMessage(messageManager.getMessage("permission_denied"));
+                return true;
+            }
+            chunkAnalyzer.analyzeChunks(sender);
+            return true;
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("retrieve")) {
             if (!sender.hasPermission("fixlag.retrieve")) {
                 sender.sendMessage(messageManager.getMessage("permission_denied"));

@@ -58,3 +58,9 @@ log_config_invalid_deletion_interval: "Deletion interval is invalid! Using defau
 log_config_invalid_warning_time: "Warning time is invalid! Using default value of 5 seconds."
 log_config_invalid_overload_interval: "Overload check interval is invalid! Using default value of 30 seconds."
 log_config_invalid_update_interval: "Update check interval is invalid! Using default value of 1 day."
+
+# Chunk Analysis
+chunk_analysis_started: "<yellow>Analyzing chunks... This may take a moment."
+chunk_analysis_header: "<yellow>--- Top 10 Chunks by Entity Count ---"
+chunk_analysis_no_data: "<red>No loaded chunks with entities found."
+chunk_analysis_entry: " <gray>- <gold><world> <gray>(<x>, <z>): <green><count> Entities"

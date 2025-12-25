@@ -75,9 +75,17 @@ public class TaskManager {
 
     private void sendWarning() {
         long warningTimeSeconds = configManager.getWarningTimeTicks() / 20L;
-        String formattedMessage = messageManager.getMessage("entity_clear_warning", "%fixlag_time%", String.valueOf(warningTimeSeconds));
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(formattedMessage);
+        
+        if ("ACTION_BAR".equalsIgnoreCase(configManager.getNotificationType())) {
+            Component warningComponent = messageManager.getComponentMessage("entity_clear_warning", "%fixlag_time%", String.valueOf(warningTimeSeconds));
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.sendActionBar(warningComponent);
+            }
+        } else {
+            String formattedMessage = messageManager.getMessage("entity_clear_warning", "%fixlag_time%", String.valueOf(warningTimeSeconds));
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.sendMessage(formattedMessage);
+            }
         }
     }
 
@@ -86,8 +94,17 @@ public class TaskManager {
         int deletedCount = deletedItems.size();
         if (deletedCount > 0) {
             deletedItemsManager.addDeletedItems(deletedItems);
-            String broadcastMessage = messageManager.getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
-            Bukkit.getServer().broadcast(Component.text(broadcastMessage));
+            
+            if ("ACTION_BAR".equalsIgnoreCase(configManager.getNotificationType())) {
+                 Component broadcastComponent = messageManager.getComponentMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
+                 for (Player player : Bukkit.getOnlinePlayers()) {
+                     player.sendActionBar(broadcastComponent);
+                 }
+            } else {
+                String broadcastMessage = messageManager.getMessage("entity_clear_broadcast", "%fixlag_count%", String.valueOf(deletedCount));
+                Bukkit.getServer().broadcast(Component.text(broadcastMessage));
+            }
+
             if (configManager.isLogMemoryStats()) {
                 performanceMonitor.logMemoryUsage();
             }

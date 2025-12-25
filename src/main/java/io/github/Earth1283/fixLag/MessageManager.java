@@ -63,6 +63,24 @@ public class MessageManager {
         return getMessage(key, true, replacements);
     }
 
+    public Component getComponentMessage(String key, boolean includePrefix, String... replacements) {
+        String raw = messagesConfig.getString(key, "Error: Message key '" + key + "' not found in messages.yml");
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) {
+                raw = raw.replace(replacements[i], replacements[i + 1]);
+            }
+        }
+        if (includePrefix) {
+            String prefixRaw = messagesConfig.getString("prefix", "<gray>[<green>FixLag<gray>] <reset>");
+            raw = prefixRaw + raw;
+        }
+        return miniMessage.deserialize(raw);
+    }
+
+    public Component getComponentMessage(String key, String... replacements) {
+        return getComponentMessage(key, true, replacements);
+    }
+
     public String getLogMessage(String key, String... replacements) {
         String raw = messagesConfig.getString(key, "Error: Log message key '" + key + "' not found in messages.yml");
         for (int i = 0; i < replacements.length; i += 2) {

@@ -15,6 +15,7 @@ public class ConfigManager {
     private long deletionIntervalTicks;
     private boolean enableWarning;
     private long warningTimeTicks;
+    private String notificationType;
     private long overloadCheckIntervalTicks;
     private boolean logMemoryStats;
     private long updateCheckIntervalTicks;
@@ -56,6 +57,7 @@ public class ConfigManager {
         deletionIntervalTicks = config.getLong("deletion-interval-seconds", 60) * 20L;
         enableWarning = config.getBoolean("enable-warning", true);
         warningTimeTicks = config.getLong("warning-time-seconds", 5) * 20L;
+        notificationType = config.getString("notification-type", "CHAT").toUpperCase();
         overloadCheckIntervalTicks = config.getLong("overload-detection.check-interval-seconds", 30) * 20L;
         logMemoryStats = config.getBoolean("log-memory-stats", false);
         updateCheckIntervalTicks = config.getLong("update-check-interval-seconds", 60 * 60 * 24) * 20L;
@@ -114,6 +116,10 @@ public class ConfigManager {
 
     public long getWarningTimeTicks() {
         return warningTimeTicks;
+    }
+
+    public String getNotificationType() {
+        return notificationType;
     }
 
     public long getOverloadCheckIntervalTicks() {
