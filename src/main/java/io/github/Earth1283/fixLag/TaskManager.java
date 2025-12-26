@@ -117,9 +117,22 @@ public class TaskManager {
         Set<String> entitiesToDelete = configManager.getEntitiesToDelete();
         for (World world : Bukkit.getWorlds()) {
             for (Entity entity : world.getEntities()) {
-                if (entity.isValid() && entitiesToDelete.contains(entity.getType().name())) {
+                if (!entity.isValid()) continue;
+
+                boolean shouldDelete = entitiesToDelete.contains(entity.getType().name());
+                boolean isProjectile = entity instanceof org.bukkit.entity.AbstractArrow;
+
+                if (shouldDelete || isProjectile) {
                     if (configManager.isIgnoreCustomNamedItems() && entity.customName() != null) {
                         continue;
+                    }
+
+                    if (entity instanceof org.bukkit.entity.Trident) {
+                        org.bukkit.entity.Trident trident = (org.bukkit.entity.Trident) entity;
+                        if (!trident.getItemStack().getEnchantments().isEmpty()) {
+                            continue;
+                        }
+                        deletedItems.add(trident.getItemStack());
                     }
 
                     if (entity instanceof Item) {
