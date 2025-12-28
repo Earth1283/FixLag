@@ -72,3 +72,13 @@ distance_increased: "<green>Server performance has improved. View distance incre
 # v3.8 New Logs
 log_explosion_optimized: "Explosion at <world> <x>, <y>, <z> was optimized (TPS: <tps>). Reduced block destruction to <count> and disabled drops: <drops>."
 log_distance_changed: "Dynamic Distance: Adjusted distance in world <world> due to TPS <tps>. View: <view>, Sim: <sim>."
+
+# Optimization Config
+optimize_config_header: "<yellow>--- Optimized Configuration Proposal ---"
+optimize_config_entry: " <gray>- <gold>%file%<gray>: <aqua>%key% <red>%old% <gray>-> <green>%new%"
+optimize_config_footer: "<yellow>Run <gold>/fixlag optimizeconfig accept <yellow>to apply changes to original files.\n<yellow>Run <gold>/fixlag optimizeconfig save-new <yellow>to save to new files (*.changed).\n<yellow>Run <gold>/fixlag optimizeconfig reject <yellow>to cancel."
+optimize_config_no_changes: "<green>Your configuration is already optimized!"
+optimize_config_no_pending: "<red>No pending configuration changes found. Run /fixlag optimizeconfig first."
+optimize_config_applied: "<green>Configuration changes have been applied successfully!"
+optimize_config_rejected: "<yellow>Configuration changes have been rejected."
+optimize_config_error: "<red>An error occurred while saving the configuration: %error%"

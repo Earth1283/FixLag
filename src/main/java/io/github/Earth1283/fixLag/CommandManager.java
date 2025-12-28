@@ -20,14 +20,16 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     private final MessageManager messageManager;
     private final DeletedItemsManager deletedItemsManager;
     private final ChunkAnalyzer chunkAnalyzer;
+    private final ServerConfigOptimizer configOptimizer;
 
-    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager, ChunkAnalyzer chunkAnalyzer) {
+    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager, ChunkAnalyzer chunkAnalyzer, ServerConfigOptimizer configOptimizer) {
         this.plugin = plugin;
         this.taskManager = taskManager;
         this.performanceMonitor = performanceMonitor;
         this.messageManager = messageManager;
         this.deletedItemsManager = deletedItemsManager;
         this.chunkAnalyzer = chunkAnalyzer;
+        this.configOptimizer = configOptimizer;
         registerCommands();
     }
 
@@ -65,8 +67,13 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getName().equalsIgnoreCase("fixlag")) {
             if (args.length == 1) {
-                List<String> subcommands = new ArrayList<>(Arrays.asList("retrieve", "reload", "checkchunks"));
+                List<String> subcommands = new ArrayList<>(Arrays.asList("retrieve", "reload", "checkchunks", "optimizeconfig"));
                 subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[0].toLowerCase()));
+                return subcommands;
+            }
+            if (args.length == 2 && args[0].equalsIgnoreCase("optimizeconfig")) {
+                List<String> subcommands = new ArrayList<>(Arrays.asList("accept", "save-new", "reject"));
+                subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[1].toLowerCase()));
                 return subcommands;
             }
         }
@@ -80,6 +87,33 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 return true;
             }
             chunkAnalyzer.analyzeChunks(sender);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("optimizeconfig")) {
+            if (!sender.hasPermission("fixlag.optimizeconfig")) {
+                sender.sendMessage(messageManager.getMessage("permission_denied"));
+                return true;
+            }
+            if (args.length == 1) {
+                configOptimizer.analyze(sender);
+                return true;
+            }
+            String sub = args[1].toLowerCase();
+            switch (sub) {
+                case "accept":
+                    configOptimizer.applyChanges(sender, true);
+                    break;
+                case "save-new":
+                    configOptimizer.applyChanges(sender, false);
+                    break;
+                case "reject":
+                    configOptimizer.rejectChanges(sender);
+                    break;
+                default:
+                    sender.sendMessage(messageManager.getComponentMessage("optimize_config_footer"));
+                    break;
+            }
             return true;
         }
 
