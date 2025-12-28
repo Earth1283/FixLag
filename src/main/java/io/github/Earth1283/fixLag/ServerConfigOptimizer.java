@@ -69,6 +69,55 @@ public class ServerConfigOptimizer {
              }
         }
 
+        // Analyze paper.yml (Old Paper)
+        File paperFile = new File("paper.yml");
+        if (paperFile.exists()) {
+            YamlConfiguration paperConfig = YamlConfiguration.loadConfiguration(paperFile);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.max-auto-save-chunks-per-tick", 24, 8);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.optimize-explosions", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.mob-spawner-tick-rate", 1, 2);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.game-mechanics.disable-chest-cat-detection", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.hopper.disable-move-event", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.non-player-arrow-despawn-rate", -1, 60); // 3 seconds
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.creative-arrow-despawn-rate", -1, 60);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.prevent-moving-into-unloaded-chunks", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.use-faster-eigencraft-redstone", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.armor-stands-do-collision-entity-lookups", true, false);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.per-player-mob-spawns", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.alt-item-despawn-rate.enabled", false, true);
+            checkSetting(changes, paperFile, paperConfig, "world-settings.default.alt-item-despawn-rate.items.cobblestone", 300, 100);
+        }
+
+        // Analyze config/paper-global.yml (New Paper Global)
+        File paperGlobalFile = new File("config/paper-global.yml");
+        if (paperGlobalFile.exists()) {
+            YamlConfiguration paperGlobalConfig = YamlConfiguration.loadConfiguration(paperGlobalFile);
+            checkSetting(changes, paperGlobalFile, paperGlobalConfig, "chunk-loading.min-load-radius", 2, 2);
+            checkSetting(changes, paperGlobalFile, paperGlobalConfig, "misc.client-interaction-updates-per-tick-in-single-player", -1, 1);
+            checkSetting(changes, paperGlobalFile, paperGlobalConfig, "spam-limiter.tab-spam-increment", 1, 10);
+            checkSetting(changes, paperGlobalFile, paperGlobalConfig, "spam-limiter.tab-spam-limit", 500, 20);
+        }
+
+        // Analyze config/paper-world-defaults.yml (New Paper World Defaults)
+        File paperWorldFile = new File("config/paper-world-defaults.yml");
+        if (paperWorldFile.exists()) {
+            YamlConfiguration paperWorldConfig = YamlConfiguration.loadConfiguration(paperWorldFile);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "environment.optimize-explosions", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "environment.disable-teleportation-suffocation-check", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "chunks.auto-save-interval", -1, 6000);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "chunks.max-auto-save-chunks-per-tick", 24, 8);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "entities.spawning.per-player-mob-spawns", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "entities.behavior.disable-chest-cat-detection", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "entities.behavior.spawner-nerfed-mobs-should-jump", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "entities.entities-target-with-follow-range", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "collisions.only-players-collide", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "tick-rates.mob-spawner", 1, 2);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "tick-rates.grass-spread", 1, 4);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "tick-rates.container-update", 1, 2);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "hopper.disable-move-event", false, true);
+            checkSetting(changes, paperWorldFile, paperWorldConfig, "hopper.ignore-occluding-blocks", false, true);
+        }
+
         if (changes.isEmpty()) {
             sender.sendMessage(messageManager.getComponentMessage("optimize_config_no_changes"));
             return;
@@ -92,11 +141,18 @@ public class ServerConfigOptimizer {
         if (!config.contains(key)) return;
         
         Object current = config.get(key);
-        if (current instanceof Number && optimized instanceof Number) {
+        
+        if (current instanceof Boolean && optimized instanceof Boolean) {
+            boolean currVal = (Boolean) current;
+            boolean optVal = (Boolean) optimized;
+            if (currVal != optVal) {
+                 changes.add(new ConfigChange(file, key, current, optimized));
+            }
+        } else if (current instanceof Number && optimized instanceof Number) {
              double currVal = ((Number) current).doubleValue();
              double optVal = ((Number) optimized).doubleValue();
              
-             boolean lowerIsBetter = !key.contains("merge-radius") && !key.contains("ticks-per");
+             boolean lowerIsBetter = !key.contains("merge-radius") && !key.contains("ticks-per") && !key.contains("tab-spam-limit");
              
              if (lowerIsBetter) {
                  if (currVal > optVal) {
