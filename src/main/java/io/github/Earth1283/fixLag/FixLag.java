@@ -16,6 +16,8 @@ public class FixLag extends JavaPlugin {
     private DeletedItemsManager deletedItemsManager;
     private MobStacker mobStacker;
     private ChunkAnalyzer chunkAnalyzer;
+    private ExplosionOptimizer explosionOptimizer;
+    private DynamicDistanceManager dynamicDistanceManager;
 
     @Override
     public void onEnable() {
@@ -25,17 +27,21 @@ public class FixLag extends JavaPlugin {
         performanceMonitor = new PerformanceMonitor(messageManager, getLogger());
         deletedItemsManager = new DeletedItemsManager(this);
         chunkAnalyzer = new ChunkAnalyzer(this, messageManager);
-        taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager);
+        explosionOptimizer = new ExplosionOptimizer(this);
+        dynamicDistanceManager = new DynamicDistanceManager(this);
+        taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager);
         updateChecker = new UpdateChecker(this, configManager, messageManager);
         commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager, chunkAnalyzer);
         mobStacker = new MobStacker(this, configManager);
 
         // Register events
         getServer().getPluginManager().registerEvents(mobStacker, this);
+        getServer().getPluginManager().registerEvents(explosionOptimizer, this);
 
         // Start tasks
         taskManager.startDeletionTask();
         taskManager.startSmartClearTask();
+        taskManager.startDynamicDistanceTask();
         updateChecker.startUpdateCheckTask();
 
         // Enable bStats

@@ -83,3 +83,32 @@ smart-clear:
   # even if the TPS remains below the threshold. This prevents excessive cleanups.
   # Example: 300 seconds = 5 minutes.
   cooldown-seconds: 300
+
+# Explosion Optimization: Reduces lag from TNT and explosions.
+explosion-optimization:
+  enabled: true
+  # TPS threshold to activate optimization.
+  tps-threshold: 16.0
+  # Whether to disable block item drops from explosions when optimized.
+  disable-block-drops: true
+  # Maximum blocks an explosion can destroy. 0 to disable limit.
+  max-blocks-limit: 100
+
+# Dynamic Distance: Adjusts view and simulation distance based on server performance.
+# Requires Minecraft 1.18+ for simulation distance adjustment.
+dynamic-distance:
+  enabled: false
+  # TPS threshold to decrease distance.
+  tps-low-threshold: 17.0
+  # TPS threshold to increase distance (buffer to avoid flickering).
+  tps-high-threshold: 19.0
+  # Minimum and maximum view distance.
+  min-view-distance: 4
+  max-view-distance: 10
+  # Minimum and maximum simulation distance (if supported).
+  min-simulation-distance: 4
+  max-simulation-distance: 10
+  # How often (in seconds) to check and adjust distance.
+  check-interval-seconds: 60
+  # Whether to notify players with 'fixlag.notify.distance' permission when distance changes.
+  notify-admins: true

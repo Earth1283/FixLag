@@ -64,3 +64,11 @@ chunk_analysis_started: "<yellow>Analyzing chunks... This may take a moment."
 chunk_analysis_header: "<yellow>--- Top 10 Chunks by Entity Count ---"
 chunk_analysis_no_data: "<red>No loaded chunks with entities found."
 chunk_analysis_entry: " <gray>- <gold><world> <gray>(<x>, <z>): <green><count> Entities"
+
+# v3.8 New Messages
+distance_decreased: "<yellow>Server performance is low. View distance decreased to <view> and simulation distance to <sim>."
+distance_increased: "<green>Server performance has improved. View distance increased to <view> and simulation distance to <sim>."
+
+# v3.8 New Logs
+log_explosion_optimized: "Explosion at <world> <x>, <y>, <z> was optimized (TPS: <tps>). Reduced block destruction to <count> and disabled drops: <drops>."
+log_distance_changed: "Dynamic Distance: Adjusted distance in world <world> due to TPS <tps>. View: <view>, Sim: <sim>."

@@ -34,6 +34,23 @@ public class ConfigManager {
     private long smartClearCheckIntervalTicks;
     private long smartClearCooldownTicks;
 
+    // Explosion Optimization Config
+    private boolean explosionOptimizationEnabled;
+    private double explosionOptimizationTpsThreshold;
+    private boolean explosionOptimizationDisableDrops;
+    private int explosionOptimizationMaxBlocksLimit;
+
+    // Dynamic Distance Config
+    private boolean dynamicDistanceEnabled;
+    private double dynamicDistanceTpsLowThreshold;
+    private double dynamicDistanceTpsHighThreshold;
+    private int dynamicDistanceMinView;
+    private int dynamicDistanceMaxView;
+    private int dynamicDistanceMinSim;
+    private int dynamicDistanceMaxSim;
+    private long dynamicDistanceCheckIntervalTicks;
+    private boolean dynamicDistanceNotifyAdmins;
+
     private final MessageManager messageManager;
 
     public ConfigManager(JavaPlugin plugin, MessageManager messageManager) {
@@ -75,6 +92,23 @@ public class ConfigManager {
         smartClearTpsThreshold = config.getDouble("smart-clear.tps-threshold", 16.0);
         smartClearCheckIntervalTicks = config.getLong("smart-clear.check-interval-seconds", 10) * 20L;
         smartClearCooldownTicks = config.getLong("smart-clear.cooldown-seconds", 300) * 20L;
+
+        // Load Explosion Optimization Config
+        explosionOptimizationEnabled = config.getBoolean("explosion-optimization.enabled", true);
+        explosionOptimizationTpsThreshold = config.getDouble("explosion-optimization.tps-threshold", 16.0);
+        explosionOptimizationDisableDrops = config.getBoolean("explosion-optimization.disable-block-drops", true);
+        explosionOptimizationMaxBlocksLimit = config.getInt("explosion-optimization.max-blocks-limit", 100);
+
+        // Load Dynamic Distance Config
+        dynamicDistanceEnabled = config.getBoolean("dynamic-distance.enabled", false);
+        dynamicDistanceTpsLowThreshold = config.getDouble("dynamic-distance.tps-low-threshold", 17.0);
+        dynamicDistanceTpsHighThreshold = config.getDouble("dynamic-distance.tps-high-threshold", 19.0);
+        dynamicDistanceMinView = config.getInt("dynamic-distance.min-view-distance", 4);
+        dynamicDistanceMaxView = config.getInt("dynamic-distance.max-view-distance", 10);
+        dynamicDistanceMinSim = config.getInt("dynamic-distance.min-simulation-distance", 4);
+        dynamicDistanceMaxSim = config.getInt("dynamic-distance.max-simulation-distance", 10);
+        dynamicDistanceCheckIntervalTicks = config.getLong("dynamic-distance.check-interval-seconds", 60) * 20L;
+        dynamicDistanceNotifyAdmins = config.getBoolean("dynamic-distance.notify-admins", true);
 
         validateConfigValues();
     }
@@ -174,5 +208,59 @@ public class ConfigManager {
 
     public long getSmartClearCooldownTicks() {
         return smartClearCooldownTicks;
+    }
+
+    // Explosion Optimization Getters
+    public boolean isExplosionOptimizationEnabled() {
+        return explosionOptimizationEnabled;
+    }
+
+    public double getExplosionOptimizationTpsThreshold() {
+        return explosionOptimizationTpsThreshold;
+    }
+
+    public boolean isExplosionOptimizationDisableDrops() {
+        return explosionOptimizationDisableDrops;
+    }
+
+    public int getExplosionOptimizationMaxBlocksLimit() {
+        return explosionOptimizationMaxBlocksLimit;
+    }
+
+    // Dynamic Distance Getters
+    public boolean isDynamicDistanceEnabled() {
+        return dynamicDistanceEnabled;
+    }
+
+    public double getDynamicDistanceTpsLowThreshold() {
+        return dynamicDistanceTpsLowThreshold;
+    }
+
+    public double getDynamicDistanceTpsHighThreshold() {
+        return dynamicDistanceTpsHighThreshold;
+    }
+
+    public int getDynamicDistanceMinView() {
+        return dynamicDistanceMinView;
+    }
+
+    public int getDynamicDistanceMaxView() {
+        return dynamicDistanceMaxView;
+    }
+
+    public int getDynamicDistanceMinSim() {
+        return dynamicDistanceMinSim;
+    }
+
+    public int getDynamicDistanceMaxSim() {
+        return dynamicDistanceMaxSim;
+    }
+
+    public long getDynamicDistanceCheckIntervalTicks() {
+        return dynamicDistanceCheckIntervalTicks;
+    }
+
+    public boolean isDynamicDistanceNotifyAdmins() {
+        return dynamicDistanceNotifyAdmins;
     }
 }

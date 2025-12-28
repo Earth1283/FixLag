@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,14 +23,18 @@ public class TaskManager {
     private final MessageManager messageManager;
     private final PerformanceMonitor performanceMonitor;
     private final DeletedItemsManager deletedItemsManager;
-    private long lastSmartClearTime = 0;
+    private final DynamicDistanceManager dynamicDistanceManager;
+    private BukkitTask deletionTask;
+    private BukkitTask smartClearTask;
+    private BukkitTask dynamicDistanceTask;
 
-    public TaskManager(JavaPlugin plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor, DeletedItemsManager deletedItemsManager) {
+    public TaskManager(FixLag plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor, DeletedItemsManager deletedItemsManager, DynamicDistanceManager dynamicDistanceManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.performanceMonitor = performanceMonitor;
         this.deletedItemsManager = deletedItemsManager;
+        this.dynamicDistanceManager = dynamicDistanceManager;
     }
 
     public void startDeletionTask() {
@@ -53,24 +58,37 @@ public class TaskManager {
     }
 
     public void startSmartClearTask() {
+        if (smartClearTask != null) {
+            smartClearTask.cancel();
+        }
+        if (configManager.isSmartClearEnabled()) {
+            smartClearTask = Bukkit.getScheduler().runTaskTimer(plugin, this::checkSmartClear, 20L * 30, configManager.getSmartClearCheckIntervalTicks());
+        }
+    }
+
+    public void startDynamicDistanceTask() {
+        if (dynamicDistanceTask != null) {
+            dynamicDistanceTask.cancel();
+        }
+        if (configManager.isDynamicDistanceEnabled()) {
+            dynamicDistanceTask = dynamicDistanceManager.runTaskTimer(plugin, 20L * 60, configManager.getDynamicDistanceCheckIntervalTicks());
+        }
+    }
+
+    private long lastSmartClearTime = 0;
+
+    private void checkSmartClear() {
         if (!configManager.isSmartClearEnabled()) return;
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                double tps = Bukkit.getServer().getTPS()[0]; // 1m average
-                if (tps < configManager.getSmartClearTpsThreshold()) {
-                    long currentTime = System.currentTimeMillis();
-                    long cooldownMillis = configManager.getSmartClearCooldownTicks() / 20 * 1000;
-
-                    if (currentTime - lastSmartClearTime >= cooldownMillis) {
-                        plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_smart_clear_triggered", "<tps>", String.format("%.2f", tps)));
-                        deleteAndAnnounce();
-                        lastSmartClearTime = currentTime;
-                    }
-                }
+        double tps = Bukkit.getServer().getTPS()[0];
+        if (tps < configManager.getSmartClearTpsThreshold()) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastSmartClearTime >= configManager.getSmartClearCooldownTicks() * 50L) {
+                lastSmartClearTime = currentTime;
+                plugin.getLogger().info(messageManager.getLogMessage("log_smart_clear_triggered", "<tps>", String.format("%.2f", tps)));
+                deleteAndAnnounce();
             }
-        }.runTaskTimer(plugin, configManager.getSmartClearCheckIntervalTicks(), configManager.getSmartClearCheckIntervalTicks());
+        }
     }
 
     private void sendWarning() {

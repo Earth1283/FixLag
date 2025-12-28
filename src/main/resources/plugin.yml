@@ -1,5 +1,5 @@
 name: FixLag
-version: 3.7.1
+version: 3.8.0
 main: io.github.Earth1283.fixLag.FixLag
 api-version: 1.17
 author: Earth1283
@@ -25,6 +25,9 @@ permissions:
     default: op
   fixlag.checkchunks:
     description: Allows players to use the /fixlag checkchunks command to analyze chunk entities.
+    default: op
+  fixlag.notify.distance:
+    description: Allows players to receive notifications when view or simulation distance changes.
     default: op
 commands:
   fixlag:
