@@ -8,6 +8,9 @@ permissions:
   fixlag.optimizeconfig:
     description: Allows players to use the /fixlag optimizeconfig command to optimize server settings.
     default: op
+  fixlag.reload:
+    description: Allows players to reload the plugin configuration.
+    default: op
   fixlag.overload.exempt:
     description: Players with this permission will not trigger overload warnings.
     default: false

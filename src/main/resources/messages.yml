@@ -29,6 +29,7 @@ log_update_check_failed: "Could not check for updates."
 
 # New Messages
 command_player_only: "<red>This command can only be run by a player."
+command_reload_success: "<green>Configuration and messages reloaded successfully."
 overload_warning: "<red>Warning! High number of targeted entities (<count>) detected near player <player>."
 
 # Performance Info Bodies

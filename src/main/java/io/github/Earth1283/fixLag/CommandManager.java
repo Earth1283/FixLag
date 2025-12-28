@@ -67,11 +67,16 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getName().equalsIgnoreCase("fixlag")) {
             if (args.length == 1) {
-                List<String> subcommands = new ArrayList<>(Arrays.asList("retrieve", "reload", "checkchunks", "optimizeconfig"));
+                List<String> subcommands = new ArrayList<>();
+                if (sender.hasPermission("fixlag.retrieve")) subcommands.add("retrieve");
+                if (sender.hasPermission("fixlag.reload")) subcommands.add("reload");
+                if (sender.hasPermission("fixlag.checkchunks")) subcommands.add("checkchunks");
+                if (sender.hasPermission("fixlag.optimizeconfig")) subcommands.add("optimizeconfig");
+                
                 subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[0].toLowerCase()));
                 return subcommands;
             }
-            if (args.length == 2 && args[0].equalsIgnoreCase("optimizeconfig")) {
+            if (args.length == 2 && args[0].equalsIgnoreCase("optimizeconfig") && sender.hasPermission("fixlag.optimizeconfig")) {
                 List<String> subcommands = new ArrayList<>(Arrays.asList("accept", "save-new", "reject"));
                 subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[1].toLowerCase()));
                 return subcommands;
@@ -81,6 +86,19 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleFixLagCommand(CommandSender sender, String[] args) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+            if (!sender.hasPermission("fixlag.reload")) {
+                sender.sendMessage(messageManager.getMessage("permission_denied"));
+                return true;
+            }
+            if (plugin instanceof FixLag) {
+                ((FixLag) plugin).getConfigManager().loadConfig();
+                ((FixLag) plugin).getMessageManager().loadMessages();
+            }
+            sender.sendMessage(messageManager.getMessage("command_reload_success"));
+            return true;
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("checkchunks")) {
             if (!sender.hasPermission("fixlag.checkchunks")) {
                 sender.sendMessage(messageManager.getMessage("permission_denied"));
