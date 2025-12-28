@@ -1,10 +1,13 @@
 name: FixLag
-version: 3.8.0
+version: 3.9.0
 main: io.github.Earth1283.fixLag.FixLag
 api-version: 1.17
 author: Earth1283
 description: Fixing lag without breaking farms!
 permissions:
+  fixlag.optimizeconfig:
+    description: Allows players to use the /fixlag optimizeconfig command to optimize server settings.
+    default: op
   fixlag.overload.exempt:
     description: Players with this permission will not trigger overload warnings.
     default: false
