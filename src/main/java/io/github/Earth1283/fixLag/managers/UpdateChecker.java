@@ -1,5 +1,6 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.managers;
 
+import io.github.Earth1283.fixLag.FixLag;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

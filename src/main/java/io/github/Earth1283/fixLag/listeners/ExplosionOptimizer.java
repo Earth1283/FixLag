@@ -1,5 +1,8 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.listeners;
 
+import io.github.Earth1283.fixLag.FixLag;
+import io.github.Earth1283.fixLag.managers.ConfigManager;
+import io.github.Earth1283.fixLag.managers.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;

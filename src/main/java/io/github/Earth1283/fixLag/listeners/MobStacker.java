@@ -1,5 +1,6 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.listeners;
 
+import io.github.Earth1283.fixLag.managers.ConfigManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;

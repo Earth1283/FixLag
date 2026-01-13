@@ -1,5 +1,6 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.managers;
 
+import io.github.Earth1283.fixLag.FixLag;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;

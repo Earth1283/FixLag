@@ -1,4 +1,4 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.utils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;

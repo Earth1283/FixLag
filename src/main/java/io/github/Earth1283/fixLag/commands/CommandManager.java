@@ -1,5 +1,7 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.commands;
 
+import io.github.Earth1283.fixLag.FixLag;
+import io.github.Earth1283.fixLag.managers.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;

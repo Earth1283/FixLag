@@ -1,4 +1,4 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.managers;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;

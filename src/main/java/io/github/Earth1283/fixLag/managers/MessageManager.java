@@ -1,5 +1,6 @@
-package io.github.Earth1283.fixLag;
+package io.github.Earth1283.fixLag.managers;
 
+import io.github.Earth1283.fixLag.FixLag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;

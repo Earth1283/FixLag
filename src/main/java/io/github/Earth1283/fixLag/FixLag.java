@@ -1,6 +1,10 @@
 package io.github.Earth1283.fixLag;
 
-import io.github.Earth1283.fixLag.Metrics;
+import io.github.Earth1283.fixLag.commands.CommandManager;
+import io.github.Earth1283.fixLag.listeners.ExplosionOptimizer;
+import io.github.Earth1283.fixLag.listeners.MobStacker;
+import io.github.Earth1283.fixLag.managers.*;
+import io.github.Earth1283.fixLag.utils.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
@@ -38,6 +42,7 @@ public class FixLag extends JavaPlugin {
         // Register events
         getServer().getPluginManager().registerEvents(mobStacker, this);
         getServer().getPluginManager().registerEvents(explosionOptimizer, this);
+        getServer().getPluginManager().registerEvents(deletedItemsManager, this);
 
         // Start tasks
         taskManager.startDeletionTask();
