@@ -94,8 +94,14 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (plugin instanceof FixLag) {
-                ((FixLag) plugin).getConfigManager().loadConfig();
-                ((FixLag) plugin).getMessageManager().loadMessages();
+                FixLag fixLag = (FixLag) plugin;
+                fixLag.getConfigManager().loadConfig();
+                fixLag.getMessageManager().loadMessages();
+                fixLag.getTaskManager().startDeletionTask();
+                fixLag.getTaskManager().startSmartClearTask();
+                fixLag.getTaskManager().startDynamicDistanceTask();
+                fixLag.getTaskManager().startLagNotifierTask();
+                fixLag.getUpdateChecker().startUpdateCheckTask();
             }
             sender.sendMessage(messageManager.getMessage("command_reload_success"));
             return true;

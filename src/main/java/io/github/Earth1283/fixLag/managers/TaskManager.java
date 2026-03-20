@@ -25,21 +25,27 @@ public class TaskManager {
     private final PerformanceMonitor performanceMonitor;
     private final DeletedItemsManager deletedItemsManager;
     private final DynamicDistanceManager dynamicDistanceManager;
+    private final LagNotifier lagNotifier;
     private BukkitTask deletionTask;
     private BukkitTask smartClearTask;
     private BukkitTask dynamicDistanceTask;
+    private BukkitTask lagNotifierTask;
 
-    public TaskManager(FixLag plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor, DeletedItemsManager deletedItemsManager, DynamicDistanceManager dynamicDistanceManager) {
+    public TaskManager(FixLag plugin, ConfigManager configManager, MessageManager messageManager, PerformanceMonitor performanceMonitor, DeletedItemsManager deletedItemsManager, DynamicDistanceManager dynamicDistanceManager, LagNotifier lagNotifier) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
         this.performanceMonitor = performanceMonitor;
         this.deletedItemsManager = deletedItemsManager;
         this.dynamicDistanceManager = dynamicDistanceManager;
+        this.lagNotifier = lagNotifier;
     }
 
     public void startDeletionTask() {
-        new BukkitRunnable() {
+        if (deletionTask != null) {
+            deletionTask.cancel();
+        }
+        deletionTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (configManager.getEntitiesToDelete() == null || configManager.getEntitiesToDelete().isEmpty()) {
@@ -73,6 +79,15 @@ public class TaskManager {
         }
         if (configManager.isDynamicDistanceEnabled()) {
             dynamicDistanceTask = dynamicDistanceManager.runTaskTimer(plugin, 20L * 60, configManager.getDynamicDistanceCheckIntervalTicks());
+        }
+    }
+
+    public void startLagNotifierTask() {
+        if (lagNotifierTask != null) {
+            lagNotifierTask.cancel();
+        }
+        if (configManager.isLagNotificationsEnabled()) {
+            lagNotifierTask = Bukkit.getScheduler().runTaskTimer(plugin, lagNotifier::checkLag, 20L * 30, configManager.getLagNotificationsCheckIntervalTicks());
         }
     }
 

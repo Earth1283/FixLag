@@ -51,6 +51,17 @@ public class ConfigManager {
     private long dynamicDistanceCheckIntervalTicks;
     private boolean dynamicDistanceNotifyAdmins;
 
+    // Lag Notifications Config
+    private boolean lagNotificationsEnabled;
+    private long lagNotificationsCheckIntervalTicks;
+    private long lagNotificationsCooldownTicks;
+    private boolean lagNotificationsTpsEnabled;
+    private double lagNotificationsTpsThreshold;
+    private boolean lagNotificationsRamEnabled;
+    private double lagNotificationsRamThreshold;
+    private boolean lagNotificationsPingEnabled;
+    private int lagNotificationsPingThreshold;
+
     private final MessageManager messageManager;
 
     public ConfigManager(JavaPlugin plugin, MessageManager messageManager) {
@@ -109,6 +120,17 @@ public class ConfigManager {
         dynamicDistanceMaxSim = config.getInt("dynamic-distance.max-simulation-distance", 10);
         dynamicDistanceCheckIntervalTicks = config.getLong("dynamic-distance.check-interval-seconds", 60) * 20L;
         dynamicDistanceNotifyAdmins = config.getBoolean("dynamic-distance.notify-admins", true);
+
+        // Load Lag Notifications Config
+        lagNotificationsEnabled = config.getBoolean("lag-notifications.enabled", true);
+        lagNotificationsCheckIntervalTicks = config.getLong("lag-notifications.check-interval-seconds", 15) * 20L;
+        lagNotificationsCooldownTicks = config.getLong("lag-notifications.cooldown-seconds", 300) * 20L;
+        lagNotificationsTpsEnabled = config.getBoolean("lag-notifications.tps.enabled", true);
+        lagNotificationsTpsThreshold = config.getDouble("lag-notifications.tps.threshold", 15.0);
+        lagNotificationsRamEnabled = config.getBoolean("lag-notifications.ram.enabled", true);
+        lagNotificationsRamThreshold = config.getDouble("lag-notifications.ram.usage-percent-threshold", 90.0);
+        lagNotificationsPingEnabled = config.getBoolean("lag-notifications.ping.enabled", true);
+        lagNotificationsPingThreshold = config.getInt("lag-notifications.ping.average-threshold", 150);
 
         validateConfigValues();
     }
@@ -262,5 +284,42 @@ public class ConfigManager {
 
     public boolean isDynamicDistanceNotifyAdmins() {
         return dynamicDistanceNotifyAdmins;
+    }
+
+    // Lag Notifications Getters
+    public boolean isLagNotificationsEnabled() {
+        return lagNotificationsEnabled;
+    }
+
+    public long getLagNotificationsCheckIntervalTicks() {
+        return lagNotificationsCheckIntervalTicks;
+    }
+
+    public long getLagNotificationsCooldownTicks() {
+        return lagNotificationsCooldownTicks;
+    }
+
+    public boolean isLagNotificationsTpsEnabled() {
+        return lagNotificationsTpsEnabled;
+    }
+
+    public double getLagNotificationsTpsThreshold() {
+        return lagNotificationsTpsThreshold;
+    }
+
+    public boolean isLagNotificationsRamEnabled() {
+        return lagNotificationsRamEnabled;
+    }
+
+    public double getLagNotificationsRamThreshold() {
+        return lagNotificationsRamThreshold;
+    }
+
+    public boolean isLagNotificationsPingEnabled() {
+        return lagNotificationsPingEnabled;
+    }
+
+    public int getLagNotificationsPingThreshold() {
+        return lagNotificationsPingThreshold;
     }
 }

@@ -112,3 +112,24 @@ dynamic-distance:
   check-interval-seconds: 60
   # Whether to notify players with 'fixlag.notify.distance' permission when distance changes.
   notify-admins: true
+
+# Lag Notifications: Automated alerts for performance issues
+lag-notifications:
+  enabled: true
+  # How often (in seconds) to check for lag
+  check-interval-seconds: 15
+  # Cooldown (in seconds) between alerts to prevent spam
+  cooldown-seconds: 300
+  tps:
+    enabled: true
+    # Alert if 1m TPS drops below this
+    threshold: 15.0
+  ram:
+    enabled: true
+    # Alert if used RAM percentage exceeds this
+    usage-percent-threshold: 90.0
+  ping:
+    enabled: true
+    # Alert if average player ping exceeds this (ms)
+    average-threshold: 150
+

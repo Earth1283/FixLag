@@ -83,3 +83,8 @@ optimize_config_no_pending: "<red>No pending configuration changes found. Run /f
 optimize_config_applied: "<green>Configuration changes have been applied successfully!"
 optimize_config_rejected: "<yellow>Configuration changes have been rejected."
 optimize_config_error: "<red>An error occurred while saving the configuration: %error%"
+
+# Lag Notifications
+lag_alert_tps: "<red><bold>WARNING:</bold> <yellow>Server TPS has dropped to <red>%fixlag_tps%</red>!"
+lag_alert_ram: "<red><bold>WARNING:</bold> <yellow>Server RAM usage is critically high (<red>%fixlag_ram_percent%%</red>)!"
+lag_alert_ping: "<red><bold>WARNING:</bold> <yellow>Average player ping is very high (<red>%fixlag_avg_ping% ms</red>)!"
