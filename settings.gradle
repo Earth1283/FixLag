@@ -1,1 +1,8 @@
 rootProject.name = 'FixLag'
+
+buildCache {
+    local {
+        enabled = true
+        removeUnusedEntriesAfterDays = 30
+    }
+}
