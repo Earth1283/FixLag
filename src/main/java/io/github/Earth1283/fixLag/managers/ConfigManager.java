@@ -3,7 +3,9 @@ package io.github.Earth1283.fixLag.managers;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -20,6 +22,15 @@ public class ConfigManager {
     private boolean logMemoryStats;
     private long updateCheckIntervalTicks;
     private String updateUrl;
+
+    // Chunk Entity Limits Config
+    private boolean chunkEntityLimitsEnabled;
+    private Map<String, Integer> chunkEntityLimits;
+    private boolean chunkEntityLimitsSkipNamed;
+    private boolean chunkEntityLimitsSkipTamed;
+
+    // Villager Lobotomization Config
+    private boolean villagerLobotomizationEnabled;
 
     // Mob Stacking Config
     private boolean mobStackingEnabled;
@@ -90,6 +101,20 @@ public class ConfigManager {
         logMemoryStats = config.getBoolean("log-memory-stats", false);
         updateCheckIntervalTicks = config.getLong("update-check-interval-seconds", 60 * 60 * 24) * 20L;
         updateUrl = config.getString("update-url", "https://api.modrinth.com/v2/project/fixlag/version");
+
+        // Load Chunk Entity Limits Config
+        chunkEntityLimitsEnabled = config.getBoolean("chunk-entity-limits.enabled", false);
+        chunkEntityLimits = new HashMap<>();
+        if (config.isConfigurationSection("chunk-entity-limits.limits")) {
+            for (String key : config.getConfigurationSection("chunk-entity-limits.limits").getKeys(false)) {
+                chunkEntityLimits.put(key.toUpperCase(), config.getInt("chunk-entity-limits.limits." + key));
+            }
+        }
+        chunkEntityLimitsSkipNamed = config.getBoolean("chunk-entity-limits.skip-custom-named", true);
+        chunkEntityLimitsSkipTamed = config.getBoolean("chunk-entity-limits.skip-tamed", true);
+
+        // Load Villager Lobotomization Config
+        villagerLobotomizationEnabled = config.getBoolean("villager-lobotomization.enabled", false);
 
         // Load Mob Stacking Config
         mobStackingEnabled = config.getBoolean("mob-stacking.enabled", true);
@@ -192,6 +217,28 @@ public class ConfigManager {
 
     public String getUpdateUrl() {
         return updateUrl;
+    }
+
+    // Chunk Entity Limits Getters
+    public boolean isChunkEntityLimitsEnabled() {
+        return chunkEntityLimitsEnabled;
+    }
+
+    public Map<String, Integer> getChunkEntityLimits() {
+        return chunkEntityLimits;
+    }
+
+    public boolean isChunkEntityLimitsSkipNamed() {
+        return chunkEntityLimitsSkipNamed;
+    }
+
+    public boolean isChunkEntityLimitsSkipTamed() {
+        return chunkEntityLimitsSkipTamed;
+    }
+
+    // Villager Lobotomization Getters
+    public boolean isVillagerLobotomizationEnabled() {
+        return villagerLobotomizationEnabled;
     }
 
     // Mob Stacking Getters

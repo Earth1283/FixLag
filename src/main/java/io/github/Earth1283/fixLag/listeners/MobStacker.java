@@ -36,13 +36,16 @@ public class MobStacker implements Listener {
 
         LivingEntity entity = event.getEntity();
         if (!configManager.getMobStackingAllowedEntities().contains(entity.getType().name())) return;
+        
+        // Don't stack named or tamed entities
+        if (entity.getCustomName() != null) return;
+        if (entity instanceof org.bukkit.entity.Tameable && ((org.bukkit.entity.Tameable) entity).isTamed()) return;
 
         double radius = configManager.getMobStackingRadius();
         int maxStack = configManager.getMobStackingMaxStackSize();
         Location loc = event.getLocation();
 
         // Check for nearby entities to stack into
-        // Note: We use the world from the location, not the entity, as the entity might not be fully world-linked yet
         if (loc.getWorld() == null) return;
 
         Collection<Entity> nearbyEntities = loc.getWorld().getNearbyEntities(loc, radius, radius, radius);
@@ -50,6 +53,11 @@ public class MobStacker implements Listener {
         for (Entity nearby : nearbyEntities) {
             if (nearby.getType() == entity.getType() && nearby.isValid() && !nearby.isDead() && nearby instanceof LivingEntity) {
                 LivingEntity nearbyLiving = (LivingEntity) nearby;
+                
+                // Don't stack into named/tamed entities either
+                if (nearbyLiving.getCustomName() != null && getStackSize(nearbyLiving) <= 1) continue;
+                if (nearbyLiving instanceof org.bukkit.entity.Tameable && ((org.bukkit.entity.Tameable) nearbyLiving).isTamed()) continue;
+                
                 int currentStack = getStackSize(nearbyLiving);
 
                 if (currentStack < maxStack) {
@@ -79,8 +87,16 @@ public class MobStacker implements Listener {
                 setStackSize(newLiving, stackSize - 1);
                 updateName(newLiving);
                 
-                // Optional: Transfer fire ticks or other states if strictly needed,
-                // but usually a fresh entity is cleaner for "unstacking".
+                // Transfer metadata
+                if (entity instanceof org.bukkit.entity.Ageable && newLiving instanceof org.bukkit.entity.Ageable) {
+                    ((org.bukkit.entity.Ageable) newLiving).setAge(((org.bukkit.entity.Ageable) entity).getAge());
+                }
+                if (entity instanceof org.bukkit.entity.Sheep && newLiving instanceof org.bukkit.entity.Sheep) {
+                    ((org.bukkit.entity.Sheep) newLiving).setColor(((org.bukkit.entity.Sheep) entity).getColor());
+                }
+                if (entity instanceof org.bukkit.entity.Slime && newLiving instanceof org.bukkit.entity.Slime) {
+                    ((org.bukkit.entity.Slime) newLiving).setSize(((org.bukkit.entity.Slime) entity).getSize());
+                }
             }
         }
     }

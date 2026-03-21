@@ -57,9 +57,9 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             case "fixlag":
                 return handleFixLagCommand(sender, args);
             case "gcinfo":
-                return handleGcİnfoCommand(sender);
+                return handleGcInfoCommand(sender);
             case "serverinfo":
-                return handleServerİnfoCommand(sender);
+                return handleServerInfoCommand(sender);
             default:
                 return false;
         }
@@ -167,7 +167,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean handleGcİnfoCommand(CommandSender sender) {
+    private boolean handleGcInfoCommand(CommandSender sender) {
         if (!sender.hasPermission("fixlag.gcinfo")) {
             sender.sendMessage(messageManager.getMessage("permission_denied"));
             return true;
@@ -176,7 +176,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean handleServerİnfoCommand(CommandSender sender) {
+    private boolean handleServerInfoCommand(CommandSender sender) {
         if (!sender.hasPermission("fixlag.serverinfo")) {
             sender.sendMessage(messageManager.getMessage("permission_denied"));
             return true;

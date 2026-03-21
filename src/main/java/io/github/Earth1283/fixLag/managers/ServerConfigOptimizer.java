@@ -213,17 +213,23 @@ public class ServerConfigOptimizer {
                     File saveFile = overwrite ? file : new File(file.getParent(), file.getName() + ".changed");
                     config.save(saveFile);
                 } else if (file.getName().equals("server.properties")) {
-                    Properties props = new Properties();
-                    try (FileInputStream in = new FileInputStream(file)) {
-                        props.load(in);
-                    }
+                    List<String> lines = java.nio.file.Files.readAllLines(file.toPath());
                     for (ConfigChange change : fileChanges) {
-                        props.setProperty(change.key, String.valueOf(change.newValue));
+                        boolean found = false;
+                        for (int i = 0; i < lines.size(); i++) {
+                            String line = lines.get(i).trim();
+                            if (line.startsWith(change.key + "=") || line.startsWith(change.key + " =")) {
+                                lines.set(i, change.key + "=" + change.newValue);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                             lines.add(change.key + "=" + change.newValue);
+                        }
                     }
                     File saveFile = overwrite ? file : new File(file.getParent(), file.getName() + ".changed");
-                    try (FileOutputStream out = new FileOutputStream(saveFile)) {
-                        props.store(out, "Optimized by FixLag");
-                    }
+                    java.nio.file.Files.write(saveFile.toPath(), lines);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

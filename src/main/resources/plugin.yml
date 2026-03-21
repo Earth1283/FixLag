@@ -1,5 +1,5 @@
 name: FixLag
-version: 3.11
+version: 3.11.1
 main: io.github.Earth1283.fixLag.FixLag
 api-version: 1.17
 author: Earth1283
@@ -34,6 +34,9 @@ permissions:
     default: op
   fixlag.notify.distance:
     description: Allows players to receive notifications when view or simulation distance changes.
+    default: op
+  fixlag.notify.lag:
+    description: Allows players to receive notifications when server lag is detected.
     default: op
 commands:
   fixlag:

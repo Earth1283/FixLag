@@ -1,6 +1,7 @@
 package io.github.Earth1283.fixLag;
 
 import io.github.Earth1283.fixLag.commands.CommandManager;
+import io.github.Earth1283.fixLag.listeners.ChunkEntityLimiter;
 import io.github.Earth1283.fixLag.listeners.ExplosionOptimizer;
 import io.github.Earth1283.fixLag.listeners.MobStacker;
 import io.github.Earth1283.fixLag.managers.*;
@@ -23,6 +24,8 @@ public class FixLag extends JavaPlugin {
     private ExplosionOptimizer explosionOptimizer;
     private DynamicDistanceManager dynamicDistanceManager;
     private LagNotifier lagNotifier;
+    private ChunkEntityLimiter chunkEntityLimiter;
+    private VillagerLobotomizer villagerLobotomizer;
 
     @Override
     public void onEnable() {
@@ -35,6 +38,8 @@ public class FixLag extends JavaPlugin {
         explosionOptimizer = new ExplosionOptimizer(this);
         dynamicDistanceManager = new DynamicDistanceManager(this);
         lagNotifier = new LagNotifier(this);
+        chunkEntityLimiter = new ChunkEntityLimiter(this, configManager);
+        villagerLobotomizer = new VillagerLobotomizer(this, configManager);
         ServerConfigOptimizer configOptimizer = new ServerConfigOptimizer(this, messageManager);
         taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager, lagNotifier);
         updateChecker = new UpdateChecker(this, configManager, messageManager);
@@ -45,12 +50,14 @@ public class FixLag extends JavaPlugin {
         getServer().getPluginManager().registerEvents(mobStacker, this);
         getServer().getPluginManager().registerEvents(explosionOptimizer, this);
         getServer().getPluginManager().registerEvents(deletedItemsManager, this);
+        getServer().getPluginManager().registerEvents(chunkEntityLimiter, this);
 
         // Start tasks
         taskManager.startDeletionTask();
         taskManager.startSmartClearTask();
         taskManager.startDynamicDistanceTask();
         taskManager.startLagNotifierTask();
+        villagerLobotomizer.runTaskTimer(this, 20L * 30, 20L * 60);
         updateChecker.startUpdateCheckTask();
 
         // Enable bStats

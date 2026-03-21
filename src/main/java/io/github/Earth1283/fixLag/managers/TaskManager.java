@@ -41,10 +41,14 @@ public class TaskManager {
         this.lagNotifier = lagNotifier;
     }
 
+    private long lastDeletionTime = System.currentTimeMillis();
+    private boolean warningSent = false;
+
     public void startDeletionTask() {
         if (deletionTask != null) {
             deletionTask.cancel();
         }
+        
         deletionTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -52,16 +56,23 @@ public class TaskManager {
                     return;
                 }
 
-                if (configManager.isEnableWarning()) {
-                    long warningSchedule = configManager.getDeletionIntervalTicks() - configManager.getWarningTimeTicks();
-                    if (warningSchedule >= 0) {
-                        Bukkit.getScheduler().runTaskLater(plugin, TaskManager.this::sendWarning, warningSchedule);
-                    }
+                long intervalMs = configManager.getDeletionIntervalTicks() * 50L;
+                long warningMs = configManager.getWarningTimeTicks() * 50L;
+                long now = System.currentTimeMillis();
+                long elapsed = now - lastDeletionTime;
+
+                if (configManager.isEnableWarning() && !warningSent && elapsed >= (intervalMs - warningMs)) {
+                    sendWarning();
+                    warningSent = true;
                 }
 
-                Bukkit.getScheduler().runTaskLater(plugin, TaskManager.this::deleteAndAnnounce, configManager.getDeletionIntervalTicks());
+                if (elapsed >= intervalMs) {
+                    deleteAndAnnounce();
+                    lastDeletionTime = System.currentTimeMillis();
+                    warningSent = false;
+                }
             }
-        }.runTaskTimer(plugin, 0L, configManager.getDeletionIntervalTicks());
+        }.runTaskTimer(plugin, 20L, 20L); // Check every second
     }
 
     public void startSmartClearTask() {

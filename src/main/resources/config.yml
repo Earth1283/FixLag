@@ -34,6 +34,25 @@ warning-time-seconds: 15
 # You can use color codes (e.g., &a for light green, &2 for dark green).
 cleanup-broadcast-message: "&aCleaned up &2%count% &aunnecessary entities."
 
+# Configuration for Chunk Entity Limits
+chunk-entity-limits:
+  enabled: false
+  # Limit per entity type per chunk
+  limits:
+    ZOMBIE: 20
+    SKELETON: 20
+    CREEPER: 20
+    CHICKEN: 30
+  # Whether to skip entities with custom names
+  skip-custom-named: true
+  # Whether to skip tamed entities
+  skip-tamed: true
+
+# Villager Lobotomization: Disables AI for villagers that are trapped in a 1x1 space or a minecart.
+# This significantly reduces the performance impact of large villager trading halls.
+villager-lobotomization:
+  enabled: false
+
 # Configuration for overload detection
 overload-detection:
   # Radius in blocks to check for targeted entities around a player
