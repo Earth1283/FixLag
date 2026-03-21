@@ -12,11 +12,14 @@ FixLag is a comprehensive performance optimization plugin designed for modern Mi
 
 ### ⚙️ Reactive Optimizations
 * **Explosion Optimizer:** During low TPS, the plugin can limit the number of blocks destroyed by TNT and disable item drops from explosions to prevent cascading lag.
+* **Panic Mode:** Temporarily freezes mob AI when TPS drops critically low (e.g., 14.0) to save CPU. AI is automatically restored once TPS recovers.
+* **Spawner Optimizer:** Automatically pauses mob spawners from spawning new entities when server performance is low.
 * **Dynamic Distance:** Automatically adjusts view distance and simulation distance (1.18+) in real-time based on server load.
 * **Overload Detection:** Scans for high entity densities around players and alerts staff before the server crashes.
 
 ### 📊 Monitoring & Administration
 * **Server Analytics:** Detailed `/serverinfo` command showing TPS, MSPT, RAM, CPU usage, and per-world entity/chunk counts.
+* **Redstone Analyzer:** Profile and locate laggy redstone contraptions with `/fixlag checkredstone`.
 * **Chunk Analyzer:** Identify "laggy" chunks with the `/fixlag checkchunks` command, which ranks loaded chunks by entity count.
 * **Config Optimizer:** Use `/fixlag optimizeconfig` to analyze your `bukkit.yml`, `spigot.yml`, and `paper.yml` files. The plugin will suggest optimized values to improve performance.
 
@@ -27,6 +30,7 @@ FixLag is a comprehensive performance optimization plugin designed for modern Mi
 | `/fixlag` | `fixlag.command` | Manually triggers entity cleanup. |
 | `/fixlag retrieve` | `fixlag.retrieve` | Opens the GUI to recover deleted items. |
 | `/fixlag checkchunks` | `fixlag.checkchunks` | Analyzes chunks for high entity counts. |
+| `/fixlag checkredstone` | `fixlag.checkredstone` | Profile redstone activity across chunks. |
 | `/fixlag optimizeconfig`| `fixlag.optimizeconfig`| Suggests optimizations for server config files. |
 | `/serverinfo` | `fixlag.serverinfo` | Displays real-time performance stats. |
 | `/gcinfo` | `fixlag.gcinfo` | Displays JVM Garbage Collection details. |

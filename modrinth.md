@@ -11,10 +11,12 @@
 
 ### ✨ Feature Highlights
 
+* **Panic Mode:** Reactive AI freezer for mobs when TPS drops below 14.0.
+* **Spawner Optimizer:** Automatically pauses mob spawners during low-TPS periods.
+* **Redstone Profiling:** Find laggy contraptions with `/fixlag checkredstone`.
 * **Mob Stacking:** Merges mobs into stacks to save CPU cycles.
+* **XP Orb Merger:** Actively merges nearby XP orbs into single, high-value entities.
 * **Chunk Analyzer:** Instantly find which base or farm is causing the most entity lag.
-* **Smart Clear:** Only clears entities when TPS drops below your target (e.g., 16.0).
-* **Detailed Stats:** Beautifully formatted `/serverinfo` and `/gcinfo` commands.
 
 ### 📋 Quick Start
 

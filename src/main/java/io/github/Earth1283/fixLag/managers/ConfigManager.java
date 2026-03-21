@@ -45,6 +45,26 @@ public class ConfigManager {
     private long smartClearCheckIntervalTicks;
     private long smartClearCooldownTicks;
 
+    // Panic Mode Config
+    private boolean panicModeEnabled;
+    private double panicModeTpsThreshold;
+    private double panicModeRecoverTps;
+    private long panicModeCheckIntervalTicks;
+
+    // Spawner Optimizer Config
+    private boolean spawnerOptimizerEnabled;
+    private double spawnerOptimizerTpsThreshold;
+
+    // Armor Stand Optimizer Config
+    private boolean armorStandOptimizerEnabled;
+    private boolean armorStandDisableGravity;
+    private boolean armorStandDisableCollisions;
+
+    // XP Orb Merger Config
+    private boolean xpOrbMergerEnabled;
+    private double xpOrbMergerRadius;
+    private long xpOrbMergerCheckIntervalTicks;
+
     // Explosion Optimization Config
     private boolean explosionOptimizationEnabled;
     private double explosionOptimizationTpsThreshold;
@@ -128,6 +148,26 @@ public class ConfigManager {
         smartClearTpsThreshold = config.getDouble("smart-clear.tps-threshold", 16.0);
         smartClearCheckIntervalTicks = config.getLong("smart-clear.check-interval-seconds", 10) * 20L;
         smartClearCooldownTicks = config.getLong("smart-clear.cooldown-seconds", 300) * 20L;
+
+        // Load Panic Mode Config
+        panicModeEnabled = config.getBoolean("panic-mode.enabled", true);
+        panicModeTpsThreshold = config.getDouble("panic-mode.tps-threshold", 14.0);
+        panicModeRecoverTps = config.getDouble("panic-mode.recover-tps", 18.0);
+        panicModeCheckIntervalTicks = config.getLong("panic-mode.check-interval-seconds", 15) * 20L;
+
+        // Load Spawner Optimizer Config
+        spawnerOptimizerEnabled = config.getBoolean("spawner-optimizer.enabled", true);
+        spawnerOptimizerTpsThreshold = config.getDouble("spawner-optimizer.tps-threshold", 16.0);
+
+        // Load Armor Stand Optimizer Config
+        armorStandOptimizerEnabled = config.getBoolean("armor-stand-optimizer.enabled", true);
+        armorStandDisableGravity = config.getBoolean("armor-stand-optimizer.disable-gravity", true);
+        armorStandDisableCollisions = config.getBoolean("armor-stand-optimizer.disable-collisions", true);
+
+        // Load XP Orb Merger Config
+        xpOrbMergerEnabled = config.getBoolean("xp-orb-merger.enabled", true);
+        xpOrbMergerRadius = config.getDouble("xp-orb-merger.merge-radius", 4.0);
+        xpOrbMergerCheckIntervalTicks = config.getLong("xp-orb-merger.check-interval-seconds", 20) * 20L;
 
         // Load Explosion Optimization Config
         explosionOptimizationEnabled = config.getBoolean("explosion-optimization.enabled", true);
@@ -277,6 +317,58 @@ public class ConfigManager {
 
     public long getSmartClearCooldownTicks() {
         return smartClearCooldownTicks;
+    }
+
+    // Panic Mode Getters
+    public boolean isPanicModeEnabled() {
+        return panicModeEnabled;
+    }
+
+    public double getPanicModeTpsThreshold() {
+        return panicModeTpsThreshold;
+    }
+
+    public double getPanicModeRecoverTps() {
+        return panicModeRecoverTps;
+    }
+
+    public long getPanicModeCheckIntervalTicks() {
+        return panicModeCheckIntervalTicks;
+    }
+
+    // Spawner Optimizer Getters
+    public boolean isSpawnerOptimizerEnabled() {
+        return spawnerOptimizerEnabled;
+    }
+
+    public double getSpawnerOptimizerTpsThreshold() {
+        return spawnerOptimizerTpsThreshold;
+    }
+
+    // Armor Stand Optimizer Getters
+    public boolean isArmorStandOptimizerEnabled() {
+        return armorStandOptimizerEnabled;
+    }
+
+    public boolean isArmorStandDisableGravity() {
+        return armorStandDisableGravity;
+    }
+
+    public boolean isArmorStandDisableCollisions() {
+        return armorStandDisableCollisions;
+    }
+
+    // XP Orb Merger Getters
+    public boolean isXpOrbMergerEnabled() {
+        return xpOrbMergerEnabled;
+    }
+
+    public double getXpOrbMergerRadius() {
+        return xpOrbMergerRadius;
+    }
+
+    public long getXpOrbMergerCheckIntervalTicks() {
+        return xpOrbMergerCheckIntervalTicks;
     }
 
     // Explosion Optimization Getters

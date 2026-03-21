@@ -1,9 +1,11 @@
 package io.github.Earth1283.fixLag;
 
 import io.github.Earth1283.fixLag.commands.CommandManager;
+import io.github.Earth1283.fixLag.listeners.ArmorStandOptimizer;
 import io.github.Earth1283.fixLag.listeners.ChunkEntityLimiter;
 import io.github.Earth1283.fixLag.listeners.ExplosionOptimizer;
 import io.github.Earth1283.fixLag.listeners.MobStacker;
+import io.github.Earth1283.fixLag.listeners.SpawnerOptimizer;
 import io.github.Earth1283.fixLag.managers.*;
 import io.github.Earth1283.fixLag.utils.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -26,6 +28,11 @@ public class FixLag extends JavaPlugin {
     private LagNotifier lagNotifier;
     private ChunkEntityLimiter chunkEntityLimiter;
     private VillagerLobotomizer villagerLobotomizer;
+    private PanicModeManager panicModeManager;
+    private SpawnerOptimizer spawnerOptimizer;
+    private ArmorStandOptimizer armorStandOptimizer;
+    private RedstoneAnalyzer redstoneAnalyzer;
+    private ExperienceOrbMerger experienceOrbMerger;
 
     @Override
     public void onEnable() {
@@ -40,10 +47,15 @@ public class FixLag extends JavaPlugin {
         lagNotifier = new LagNotifier(this);
         chunkEntityLimiter = new ChunkEntityLimiter(this, configManager);
         villagerLobotomizer = new VillagerLobotomizer(this, configManager);
+        panicModeManager = new PanicModeManager(this);
+        spawnerOptimizer = new SpawnerOptimizer(this);
+        armorStandOptimizer = new ArmorStandOptimizer(this);
+        redstoneAnalyzer = new RedstoneAnalyzer(this);
+        experienceOrbMerger = new ExperienceOrbMerger(this);
         ServerConfigOptimizer configOptimizer = new ServerConfigOptimizer(this, messageManager);
         taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager, lagNotifier);
         updateChecker = new UpdateChecker(this, configManager, messageManager);
-        commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager, chunkAnalyzer, configOptimizer);
+        commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager, chunkAnalyzer, configOptimizer, redstoneAnalyzer);
         mobStacker = new MobStacker(this, configManager);
 
         // Register events
@@ -51,6 +63,8 @@ public class FixLag extends JavaPlugin {
         getServer().getPluginManager().registerEvents(explosionOptimizer, this);
         getServer().getPluginManager().registerEvents(deletedItemsManager, this);
         getServer().getPluginManager().registerEvents(chunkEntityLimiter, this);
+        getServer().getPluginManager().registerEvents(spawnerOptimizer, this);
+        getServer().getPluginManager().registerEvents(armorStandOptimizer, this);
 
         // Start tasks
         taskManager.startDeletionTask();
@@ -58,6 +72,14 @@ public class FixLag extends JavaPlugin {
         taskManager.startDynamicDistanceTask();
         taskManager.startLagNotifierTask();
         villagerLobotomizer.runTaskTimer(this, 20L * 30, 20L * 60);
+        
+        if (configManager.isPanicModeEnabled()) {
+            panicModeManager.runTaskTimer(this, 20L * 15, configManager.getPanicModeCheckIntervalTicks());
+        }
+        if (configManager.isXpOrbMergerEnabled()) {
+            experienceOrbMerger.runTaskTimer(this, 20L * 5, configManager.getXpOrbMergerCheckIntervalTicks());
+        }
+        
         updateChecker.startUpdateCheckTask();
 
         // Enable bStats

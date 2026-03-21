@@ -23,8 +23,9 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     private final DeletedItemsManager deletedItemsManager;
     private final ChunkAnalyzer chunkAnalyzer;
     private final ServerConfigOptimizer configOptimizer;
+    private final RedstoneAnalyzer redstoneAnalyzer;
 
-    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager, ChunkAnalyzer chunkAnalyzer, ServerConfigOptimizer configOptimizer) {
+    public CommandManager(JavaPlugin plugin, TaskManager taskManager, PerformanceMonitor performanceMonitor, MessageManager messageManager, DeletedItemsManager deletedItemsManager, ChunkAnalyzer chunkAnalyzer, ServerConfigOptimizer configOptimizer, RedstoneAnalyzer redstoneAnalyzer) {
         this.plugin = plugin;
         this.taskManager = taskManager;
         this.performanceMonitor = performanceMonitor;
@@ -32,6 +33,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         this.deletedItemsManager = deletedItemsManager;
         this.chunkAnalyzer = chunkAnalyzer;
         this.configOptimizer = configOptimizer;
+        this.redstoneAnalyzer = redstoneAnalyzer;
         registerCommands();
     }
 
@@ -74,6 +76,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 if (sender.hasPermission("fixlag.reload")) subcommands.add("reload");
                 if (sender.hasPermission("fixlag.checkchunks")) subcommands.add("checkchunks");
                 if (sender.hasPermission("fixlag.optimizeconfig")) subcommands.add("optimizeconfig");
+                if (sender.hasPermission("fixlag.checkredstone")) subcommands.add("checkredstone");
                 
                 subcommands.removeIf(s -> !s.toLowerCase().startsWith(args[0].toLowerCase()));
                 return subcommands;
@@ -113,6 +116,15 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 return true;
             }
             chunkAnalyzer.analyzeChunks(sender);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("checkredstone")) {
+            if (!sender.hasPermission("fixlag.checkredstone")) {
+                sender.sendMessage(messageManager.getMessage("permission_denied"));
+                return true;
+            }
+            redstoneAnalyzer.startAnalysis(sender);
             return true;
         }
 

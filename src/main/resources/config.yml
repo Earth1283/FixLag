@@ -103,6 +103,30 @@ smart-clear:
   # Example: 300 seconds = 5 minutes.
   cooldown-seconds: 300
 
+# Panic Mode: Temporarily freezes mob AI when TPS drops critically low to save CPU.
+panic-mode:
+  enabled: true
+  tps-threshold: 14.0
+  recover-tps: 18.0
+  check-interval-seconds: 15
+
+# Spawner Optimizer: Pauses Mob Spawners during low TPS to prevent farm overloads.
+spawner-optimizer:
+  enabled: true
+  tps-threshold: 16.0
+
+# Armor Stand Optimizer: Automatically disables gravity and collisions for armor stands.
+armor-stand-optimizer:
+  enabled: true
+  disable-gravity: true
+  disable-collisions: true
+
+# XP Orb Merger: Actively merges nearby experience orbs to reduce entity counts.
+xp-orb-merger:
+  enabled: true
+  merge-radius: 4.0
+  check-interval-seconds: 20
+
 # Explosion Optimization: Reduces lag from TNT and explosions.
 explosion-optimization:
   enabled: true
