@@ -176,3 +176,20 @@ lag-notifications:
     # Alert if average player ping exceeds this (ms)
     average-threshold: 150
 
+# Hopper Optimizer: Slows down hopper transfers when TPS is low to reduce inventory move events.
+hopper-optimizer:
+  enabled: true
+  # TPS threshold to activate optimization.
+  tps-threshold: 16.0
+  # Probability (0.0 to 1.0) of cancelling a hopper move event when TPS is below the threshold.
+  # 0.5 means 50% of hopper transfers will be skipped.
+  cancel-chance: 0.5
+
+# Collision Optimizer: Disables collisions for entities in dense areas during low TPS.
+collision-optimizer:
+  enabled: true
+  # TPS threshold to activate optimization.
+  tps-threshold: 16.0
+  # How often (in seconds) to check and adjust collisions.
+  check-interval-seconds: 30
+

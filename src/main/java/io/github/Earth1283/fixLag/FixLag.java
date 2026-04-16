@@ -3,7 +3,9 @@ package io.github.Earth1283.fixLag;
 import io.github.Earth1283.fixLag.commands.CommandManager;
 import io.github.Earth1283.fixLag.listeners.ArmorStandOptimizer;
 import io.github.Earth1283.fixLag.listeners.ChunkEntityLimiter;
+import io.github.Earth1283.fixLag.listeners.CollisionOptimizer;
 import io.github.Earth1283.fixLag.listeners.ExplosionOptimizer;
+import io.github.Earth1283.fixLag.listeners.HopperOptimizer;
 import io.github.Earth1283.fixLag.listeners.MobStacker;
 import io.github.Earth1283.fixLag.listeners.SpawnerOptimizer;
 import io.github.Earth1283.fixLag.managers.*;
@@ -33,6 +35,8 @@ public class FixLag extends JavaPlugin {
     private ArmorStandOptimizer armorStandOptimizer;
     private RedstoneAnalyzer redstoneAnalyzer;
     private ExperienceOrbMerger experienceOrbMerger;
+    private HopperOptimizer hopperOptimizer;
+    private CollisionOptimizer collisionOptimizer;
 
     @Override
     public void onEnable() {
@@ -52,6 +56,8 @@ public class FixLag extends JavaPlugin {
         armorStandOptimizer = new ArmorStandOptimizer(this);
         redstoneAnalyzer = new RedstoneAnalyzer(this);
         experienceOrbMerger = new ExperienceOrbMerger(this);
+        hopperOptimizer = new HopperOptimizer(this);
+        collisionOptimizer = new CollisionOptimizer(this);
         ServerConfigOptimizer configOptimizer = new ServerConfigOptimizer(this, messageManager);
         taskManager = new TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager, lagNotifier);
         updateChecker = new UpdateChecker(this, configManager, messageManager);
@@ -65,6 +71,7 @@ public class FixLag extends JavaPlugin {
         getServer().getPluginManager().registerEvents(chunkEntityLimiter, this);
         getServer().getPluginManager().registerEvents(spawnerOptimizer, this);
         getServer().getPluginManager().registerEvents(armorStandOptimizer, this);
+        getServer().getPluginManager().registerEvents(hopperOptimizer, this);
 
         // Start tasks
         taskManager.startDeletionTask();
@@ -72,6 +79,7 @@ public class FixLag extends JavaPlugin {
         taskManager.startDynamicDistanceTask();
         taskManager.startLagNotifierTask();
         villagerLobotomizer.runTaskTimer(this, 20L * 30, 20L * 60);
+        collisionOptimizer.runTaskTimer(this, 20L * 20, configManager.getCollisionOptimizerCheckIntervalTicks());
         
         if (configManager.isPanicModeEnabled()) {
             panicModeManager.runTaskTimer(this, 20L * 15, configManager.getPanicModeCheckIntervalTicks());

@@ -93,6 +93,16 @@ public class ConfigManager {
     private boolean lagNotificationsPingEnabled;
     private int lagNotificationsPingThreshold;
 
+    // Hopper Optimizer Config
+    private boolean hopperOptimizerEnabled;
+    private double hopperOptimizerTpsThreshold;
+    private double hopperOptimizerCancelChance;
+
+    // Collision Optimizer Config
+    private boolean collisionOptimizerEnabled;
+    private double collisionOptimizerTpsThreshold;
+    private long collisionOptimizerCheckIntervalTicks;
+
     private final MessageManager messageManager;
 
     public ConfigManager(JavaPlugin plugin, MessageManager messageManager) {
@@ -460,5 +470,31 @@ public class ConfigManager {
 
     public int getLagNotificationsPingThreshold() {
         return lagNotificationsPingThreshold;
+    }
+
+    // Hopper Optimizer Getters
+    public boolean isHopperOptimizerEnabled() {
+        return hopperOptimizerEnabled;
+    }
+
+    public double getHopperOptimizerTpsThreshold() {
+        return hopperOptimizerTpsThreshold;
+    }
+
+    public double getHopperOptimizerCancelChance() {
+        return hopperOptimizerCancelChance;
+    }
+
+    // Collision Optimizer Getters
+    public boolean isCollisionOptimizerEnabled() {
+        return collisionOptimizerEnabled;
+    }
+
+    public double getCollisionOptimizerTpsThreshold() {
+        return collisionOptimizerTpsThreshold;
+    }
+
+    public long getCollisionOptimizerCheckIntervalTicks() {
+        return collisionOptimizerCheckIntervalTicks;
     }
 }
