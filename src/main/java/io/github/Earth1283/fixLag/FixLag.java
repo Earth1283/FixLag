@@ -12,8 +12,6 @@ import io.github.Earth1283.fixLag.managers.*;
 import io.github.Earth1283.fixLag.utils.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.logging.Level;
-
 public class FixLag extends JavaPlugin {
 
     private ConfigManager configManager;
@@ -40,9 +38,12 @@ public class FixLag extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Initialize managers
         messageManager = new MessageManager(this);
+        messageManager.logInfo("log_startup_version", "<version>", getDescription().getVersion());
+
         configManager = new ConfigManager(this, messageManager);
+        messageManager.logInfo("log_startup_config_loaded");
+
         performanceMonitor = new PerformanceMonitor(messageManager, getLogger());
         deletedItemsManager = new DeletedItemsManager(this);
         chunkAnalyzer = new ChunkAnalyzer(this, messageManager);
@@ -64,7 +65,21 @@ public class FixLag extends JavaPlugin {
         commandManager = new CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager, chunkAnalyzer, configOptimizer, redstoneAnalyzer);
         mobStacker = new MobStacker(this, configManager);
 
-        // Register events
+        messageManager.logInfo("log_startup_features_header");
+        logFeature("Mob Stacking",           configManager.isMobStackingEnabled());
+        logFeature("Smart Clear",            configManager.isSmartClearEnabled());
+        logFeature("Panic Mode",             configManager.isPanicModeEnabled());
+        logFeature("Spawner Optimizer",      configManager.isSpawnerOptimizerEnabled());
+        logFeature("Armor Stand Optimizer",  configManager.isArmorStandOptimizerEnabled());
+        logFeature("XP Orb Merger",          configManager.isXpOrbMergerEnabled());
+        logFeature("Explosion Optimization", configManager.isExplosionOptimizationEnabled());
+        logFeature("Dynamic Distance",       configManager.isDynamicDistanceEnabled());
+        logFeature("Lag Notifications",      configManager.isLagNotificationsEnabled());
+        logFeature("Hopper Optimizer",       configManager.isHopperOptimizerEnabled());
+        logFeature("Collision Optimizer",    configManager.isCollisionOptimizerEnabled());
+        logFeature("Chunk Entity Limits",    configManager.isChunkEntityLimitsEnabled());
+        logFeature("Villager Lobotomizer",   configManager.isVillagerLobotomizationEnabled());
+
         getServer().getPluginManager().registerEvents(mobStacker, this);
         getServer().getPluginManager().registerEvents(explosionOptimizer, this);
         getServer().getPluginManager().registerEvents(deletedItemsManager, this);
@@ -72,35 +87,37 @@ public class FixLag extends JavaPlugin {
         getServer().getPluginManager().registerEvents(spawnerOptimizer, this);
         getServer().getPluginManager().registerEvents(armorStandOptimizer, this);
         getServer().getPluginManager().registerEvents(hopperOptimizer, this);
+        messageManager.logInfo("log_startup_events_registered");
 
-        // Start tasks
         taskManager.startDeletionTask();
         taskManager.startSmartClearTask();
         taskManager.startDynamicDistanceTask();
         taskManager.startLagNotifierTask();
         villagerLobotomizer.runTaskTimer(this, 20L * 30, 20L * 60);
         collisionOptimizer.runTaskTimer(this, 20L * 20, configManager.getCollisionOptimizerCheckIntervalTicks());
-        
         if (configManager.isPanicModeEnabled()) {
             panicModeManager.runTaskTimer(this, 20L * 15, configManager.getPanicModeCheckIntervalTicks());
         }
         if (configManager.isXpOrbMergerEnabled()) {
             experienceOrbMerger.runTaskTimer(this, 20L * 5, configManager.getXpOrbMergerCheckIntervalTicks());
         }
-        
         updateChecker.startUpdateCheckTask();
+        messageManager.logInfo("log_startup_tasks_started");
 
-        // Enable bStats
         new Metrics(this, 28156);
 
-        getLogger().log(Level.INFO, messageManager.getLogMessage("log_plugin_enabled"));
+        messageManager.logInfo("log_startup_ready", "<version>", getDescription().getVersion());
+    }
+
+    private void logFeature(String name, boolean enabled) {
+        String status = enabled ? "<green>enabled" : "<gray>disabled";
+        messageManager.logInfo("log_startup_feature_status", "<feature>", name, "<status>", status);
     }
 
     @Override
     public void onDisable() {
-        // Bukkit automatically cancels tasks on disable
-        getLogger().log(Level.INFO, messageManager.getLogMessage("log_plugin_disabled"));
-        getLogger().log(Level.INFO, messageManager.getLogMessage("log_plugin_goodbye"));
+        messageManager.logInfo("log_plugin_disabled");
+        messageManager.logInfo("log_plugin_goodbye");
     }
 
     public ConfigManager getConfigManager() {

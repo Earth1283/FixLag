@@ -79,7 +79,7 @@ public class LagNotifier {
             }
         }
 
-        plugin.getLogger().warning("[Lag Alert] " + type.toUpperCase() + ": " + message);
+        messageManager.logWarn(messageKey, replacements);
         lastAlertTime.put(type, now);
     }
 }

@@ -59,7 +59,7 @@ public class PanicModeManager extends BukkitRunnable {
             }
         }
 
-        plugin.getLogger().warning("[Panic Mode] Activated! TPS dropped below threshold. Froze " + frozenCount + " mobs to save CPU.");
+        messageManager.logWarn("log_panic_activated", "<count>", String.valueOf(frozenCount));
     }
 
     private void deactivatePanicMode() {
@@ -78,6 +78,6 @@ public class PanicModeManager extends BukkitRunnable {
         }
         
         frozenEntities.clear();
-        plugin.getLogger().info("[Panic Mode] Deactivated! TPS recovered. Unfroze " + thawedCount + " mobs.");
+        messageManager.logInfo("log_panic_deactivated", "<count>", String.valueOf(thawedCount));
     }
 }

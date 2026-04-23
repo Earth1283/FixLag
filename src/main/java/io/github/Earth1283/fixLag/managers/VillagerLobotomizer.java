@@ -44,10 +44,10 @@ public class VillagerLobotomizer extends BukkitRunnable {
         }
 
         if (lobotomizedCount > 0) {
-            plugin.getLogger().info(messageManager.getLogMessage("log_villager_lobotomized", "<count>", String.valueOf(lobotomizedCount)));
+            messageManager.logInfo("log_villager_lobotomized", "<count>", String.valueOf(lobotomizedCount));
         }
         if (restoredCount > 0) {
-            plugin.getLogger().info("Restored AI to " + restoredCount + " villagers who are no longer trapped.");
+            messageManager.logInfo("log_villager_restored", "<count>", String.valueOf(restoredCount));
         }
     }
 

@@ -4,6 +4,7 @@ import io.github.Earth1283.fixLag.FixLag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -90,7 +91,23 @@ public class MessageManager {
             }
         }
         Component comp = miniMessage.deserialize(raw);
-        return legacySerializer.serialize(comp);
+        return PlainTextComponentSerializer.plainText().serialize(comp);
+    }
+
+    public void logInfo(String key, String... replacements) {
+        String raw = messagesConfig.getString(key, "Error: Log message key '" + key + "' not found in messages.yml");
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) raw = raw.replace(replacements[i], replacements[i + 1]);
+        }
+        plugin.getComponentLogger().info(miniMessage.deserialize(raw));
+    }
+
+    public void logWarn(String key, String... replacements) {
+        String raw = messagesConfig.getString(key, "Error: Log message key '" + key + "' not found in messages.yml");
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) raw = raw.replace(replacements[i], replacements[i + 1]);
+        }
+        plugin.getComponentLogger().warn(miniMessage.deserialize(raw));
     }
 
     public String getRawMessage(String key) {

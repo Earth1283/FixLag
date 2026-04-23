@@ -66,15 +66,14 @@ public class ExplosionOptimizer implements Listener {
         // Note: EntityExplodeEvent#setYield(float) exists.
         // We will handle yield in the specific event handlers if needed, but for now let's just limit the list.
         
-        plugin.getLogger().info(messageManager.getLogMessage("log_explosion_optimized",
+        messageManager.logInfo("log_explosion_optimized",
                 "<world>", location.getWorld().getName(),
                 "<x>", String.valueOf(location.getBlockX()),
                 "<y>", String.valueOf(location.getBlockY()),
                 "<z>", String.valueOf(location.getBlockZ()),
                 "<tps>", String.format("%.2f", tps),
                 "<count>", String.valueOf(blockList.size()),
-                "<drops>", String.valueOf(config.isExplosionOptimizationDisableDrops())
-        ));
+                "<drops>", String.valueOf(config.isExplosionOptimizationDisableDrops()));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

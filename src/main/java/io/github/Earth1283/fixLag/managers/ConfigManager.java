@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class ConfigManager {
 
@@ -114,12 +113,10 @@ public class ConfigManager {
     public void loadConfig() {
         plugin.saveDefaultConfig();
         FileConfiguration config = plugin.getConfig();
-        
-        // Update config with missing keys
         config.options().copyDefaults(true);
         plugin.saveConfig();
-        
         plugin.reloadConfig();
+        config = plugin.getConfig();
 
         entitiesToDelete = new HashSet<>(config.getStringList("entities-to-delete"));
         ignoreCustomNamedItems = config.getBoolean("ignore-custom-named-items", true);
@@ -135,9 +132,11 @@ public class ConfigManager {
         // Load Chunk Entity Limits Config
         chunkEntityLimitsEnabled = config.getBoolean("chunk-entity-limits.enabled", false);
         chunkEntityLimits = new HashMap<>();
-        if (config.isConfigurationSection("chunk-entity-limits.limits")) {
-            for (String key : config.getConfigurationSection("chunk-entity-limits.limits").getKeys(false)) {
-                chunkEntityLimits.put(key.toUpperCase(), config.getInt("chunk-entity-limits.limits." + key));
+        org.bukkit.configuration.ConfigurationSection limitsSection =
+            config.getConfigurationSection("chunk-entity-limits.limits");
+        if (limitsSection != null) {
+            for (String key : limitsSection.getKeys(false)) {
+                chunkEntityLimits.put(key.toUpperCase(), limitsSection.getInt(key));
             }
         }
         chunkEntityLimitsSkipNamed = config.getBoolean("chunk-entity-limits.skip-custom-named", true);
@@ -207,25 +206,122 @@ public class ConfigManager {
         lagNotificationsPingEnabled = config.getBoolean("lag-notifications.ping.enabled", true);
         lagNotificationsPingThreshold = config.getInt("lag-notifications.ping.average-threshold", 150);
 
+        // Load Hopper Optimizer Config
+        hopperOptimizerEnabled = config.getBoolean("hopper-optimizer.enabled", true);
+        hopperOptimizerTpsThreshold = config.getDouble("hopper-optimizer.tps-threshold", 16.0);
+        hopperOptimizerCancelChance = config.getDouble("hopper-optimizer.cancel-chance", 0.5);
+
+        // Load Collision Optimizer Config
+        collisionOptimizerEnabled = config.getBoolean("collision-optimizer.enabled", true);
+        collisionOptimizerTpsThreshold = config.getDouble("collision-optimizer.tps-threshold", 16.0);
+        collisionOptimizerCheckIntervalTicks = config.getLong("collision-optimizer.check-interval-seconds", 30) * 20L;
+
         validateConfigValues();
     }
 
     private void validateConfigValues() {
         if (deletionIntervalTicks <= 0) {
-            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_deletion_interval"));
+            messageManager.logWarn("log_config_invalid_deletion_interval");
             deletionIntervalTicks = 60 * 20L;
         }
         if (warningTimeTicks < 0) {
-            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_warning_time"));
+            messageManager.logWarn("log_config_invalid_warning_time");
             warningTimeTicks = 5 * 20L;
         }
         if (overloadCheckIntervalTicks <= 0) {
-            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_overload_interval"));
+            messageManager.logWarn("log_config_invalid_overload_interval");
             overloadCheckIntervalTicks = 30 * 20L;
         }
         if (updateCheckIntervalTicks <= 0) {
-            plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_config_invalid_update_interval"));
+            messageManager.logWarn("log_config_invalid_update_interval");
             updateCheckIntervalTicks = 60 * 60 * 24 * 20L;
+        }
+
+        // TPS threshold range checks (must be > 0 and <= 20)
+        if (smartClearTpsThreshold <= 0 || smartClearTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "smart-clear");
+            smartClearTpsThreshold = 16.0;
+        }
+        if (panicModeTpsThreshold <= 0 || panicModeTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "panic-mode");
+            panicModeTpsThreshold = 14.0;
+        }
+        if (panicModeRecoverTps <= 0 || panicModeRecoverTps > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "panic-mode recover");
+            panicModeRecoverTps = 18.0;
+        }
+        if (panicModeRecoverTps <= panicModeTpsThreshold) {
+            messageManager.logWarn("log_config_panic_recover_lte_threshold");
+            panicModeRecoverTps = panicModeTpsThreshold + 2.0;
+        }
+        if (spawnerOptimizerTpsThreshold <= 0 || spawnerOptimizerTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "spawner-optimizer");
+            spawnerOptimizerTpsThreshold = 16.0;
+        }
+        if (explosionOptimizationTpsThreshold <= 0 || explosionOptimizationTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "explosion-optimization");
+            explosionOptimizationTpsThreshold = 16.0;
+        }
+        if (hopperOptimizerTpsThreshold <= 0 || hopperOptimizerTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "hopper-optimizer");
+            hopperOptimizerTpsThreshold = 16.0;
+        }
+        if (collisionOptimizerTpsThreshold <= 0 || collisionOptimizerTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "collision-optimizer");
+            collisionOptimizerTpsThreshold = 16.0;
+        }
+        if (lagNotificationsTpsThreshold <= 0 || lagNotificationsTpsThreshold > 20) {
+            messageManager.logWarn("log_config_invalid_tps_threshold", "<feature>", "lag-notifications");
+            lagNotificationsTpsThreshold = 15.0;
+        }
+
+        // Dynamic distance min < max invariants
+        if (dynamicDistanceMinView >= dynamicDistanceMaxView) {
+            messageManager.logWarn("log_config_invalid_distance_range", "<type>", "view");
+            dynamicDistanceMinView = 4;
+            dynamicDistanceMaxView = 10;
+        }
+        if (dynamicDistanceMinSim >= dynamicDistanceMaxSim) {
+            messageManager.logWarn("log_config_invalid_distance_range", "<type>", "simulation");
+            dynamicDistanceMinSim = 4;
+            dynamicDistanceMaxSim = 10;
+        }
+        if (dynamicDistanceTpsLowThreshold >= dynamicDistanceTpsHighThreshold) {
+            messageManager.logWarn("log_config_invalid_dynamic_distance_tps");
+            dynamicDistanceTpsLowThreshold = 17.0;
+            dynamicDistanceTpsHighThreshold = 19.0;
+        }
+
+        // Interval > 0 checks
+        if (smartClearCheckIntervalTicks <= 0) {
+            messageManager.logWarn("log_config_invalid_interval", "<feature>", "smart-clear check");
+            smartClearCheckIntervalTicks = 10 * 20L;
+        }
+
+        // Misc range checks
+        if (hopperOptimizerCancelChance < 0 || hopperOptimizerCancelChance > 1.0) {
+            messageManager.logWarn("log_config_invalid_cancel_chance");
+            hopperOptimizerCancelChance = 0.5;
+        }
+        if (lagNotificationsRamThreshold <= 0 || lagNotificationsRamThreshold > 100) {
+            messageManager.logWarn("log_config_invalid_ram_threshold");
+            lagNotificationsRamThreshold = 90.0;
+        }
+        if (lagNotificationsPingThreshold <= 0) {
+            messageManager.logWarn("log_config_invalid_ping_threshold");
+            lagNotificationsPingThreshold = 150;
+        }
+        if (xpOrbMergerRadius <= 0) {
+            messageManager.logWarn("log_config_invalid_xporb_radius");
+            xpOrbMergerRadius = 4.0;
+        }
+        if (mobStackingRadius <= 0) {
+            messageManager.logWarn("log_config_invalid_mob_stacking_radius");
+            mobStackingRadius = 10;
+        }
+        if (mobStackingMaxStackSize <= 0) {
+            messageManager.logWarn("log_config_invalid_mob_stacking_max");
+            mobStackingMaxStackSize = 50;
         }
     }
 

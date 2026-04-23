@@ -8,8 +8,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.logging.Level;
-
 public class DynamicDistanceManager extends BukkitRunnable {
 
     private final FixLag plugin;
@@ -59,12 +57,11 @@ public class DynamicDistanceManager extends BukkitRunnable {
                 world.setViewDistance(newView);
                 setSimulationDistance(world, newSim);
 
-                plugin.getLogger().info(messageManager.getLogMessage("log_distance_changed",
+                messageManager.logInfo("log_distance_changed",
                         "<world>", world.getName(),
                         "<tps>", String.format("%.2f", tps),
                         "<view>", String.valueOf(newView),
-                        "<sim>", String.valueOf(newSim)
-                ));
+                        "<sim>", String.valueOf(newSim));
 
                 if (config.isDynamicDistanceNotifyAdmins()) {
                     String msgKey = (newView < currentView || newSim < currentSim) ? "distance_decreased" : "distance_increased";

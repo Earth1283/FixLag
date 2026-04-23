@@ -14,8 +14,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.logging.Level;
-
 public class UpdateChecker {
 
     private final JavaPlugin plugin;
@@ -37,16 +35,16 @@ public class UpdateChecker {
                     String latestVersion = getLatestVersion();
                     if (latestVersion != null) {
                         if (!plugin.getDescription().getVersion().equals(latestVersion)) {
-                            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_update_available", "%fixlag_version%", latestVersion));
+                            messageManager.logInfo("log_update_available", "<version>", latestVersion);
                             notifyUpdate(latestVersion);
                         } else {
-                            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_update_uptodate"));
+                            messageManager.logInfo("log_update_uptodate");
                         }
                     } else {
-                        plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_update_check_failed"));
+                        messageManager.logWarn("log_update_check_failed");
                     }
                 } catch (IOException e) {
-                    plugin.getLogger().log(Level.WARNING, messageManager.getLogMessage("log_update_check_error", "%fixlag_error%", e.getMessage()));
+                    messageManager.logWarn("log_update_check_error", "<error>", e.getMessage());
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 0L, configManager.getUpdateCheckIntervalTicks());

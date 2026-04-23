@@ -10,9 +10,9 @@ permission_denied: "<red>You do not have permission to use this command."
 gc_info_header: "<yellow>--- JVM Memory & GC Info ---"
 server_info_header: "<yellow>--- Server Information ---"
 server_info_tps: "<green>TPS (Last 1m, 5m, 15m): <white>%fixlag_tps_1m%, %fixlag_tps_5m%, %fixlag_tps_15m%"
-server_info_mspt: "<green>MSPT (Last 1m): <white>%fixlag_mspt_1m% ms" # Consider updating this
-server_info_mspt_5m: "<green>MSPT (Last 5m): <white>%fixlag_mspt_5m% ms" # New key
-server_info_mspt_15m: "<green>MSPT (Last 15m): <white>%fixlag_mspt_15m% ms" # New key
+server_info_mspt: "<green>MSPT (Last 1m): <white>%fixlag_mspt_1m% ms"
+server_info_mspt_5m: "<green>MSPT (Last 5m): <white>%fixlag_mspt_5m% ms"
+server_info_mspt_15m: "<green>MSPT (Last 15m): <white>%fixlag_mspt_15m% ms"
 server_info_ram: "<green>RAM Usage: <white>%fixlag_used_ram%MB / %fixlag_total_ram%MB [%fixlag_ram_percentage%]"
 server_info_cpu: "<green>CPU Usage: <white>%fixlag_cpu_usage%"
 server_info_ping: "<green>Average Ping: <white>%fixlag_avg_ping% ms"
@@ -22,10 +22,6 @@ update_available: "<yellow>A new version of FixLag is available: <gold>%fixlag_l
 update_current_version: "<yellow>You are currently using version: <gold>%fixlag_current_version%"
 update_check_failed: "<red>Could not check for updates."
 update_check_error: "<red>Error checking for updates: %fixlag_error%."
-log_entity_deleted: "Deleted %fixlag_count% unnecessary entities."
-log_update_available: "A new version of FixLag is available: %fixlag_version%. Download <hover:show_text:'<#90EE90>Click to download from the official Modrinth project</#90EE90>'><click:open_url:'https://modrinth.com/plugin/fixlag/'>here</click></hover>"
-log_update_uptodate: "FixLag is up to date."
-log_update_check_failed: "Could not check for updates."
 
 # New Messages
 command_player_only: "<red>This command can only be run by a player."
@@ -51,14 +47,45 @@ server_info_body: |
 
 # Logs
 log_memory_stats: "Memory Stats - Heap: Used=<used_heap>MB, Free=<free_heap>MB, Max=<max_heap>MB | Non-Heap: Used=<used_non_heap>MB, Free=<free_non_heap>, Max=<max_non_heap> | GC: <gc_stats>"
-log_plugin_enabled: "FixLag plugin has been enabled!"
-log_plugin_disabled: "FixLag plugin has been disabled!"
-log_plugin_goodbye: "Goodbye!"
-log_smart_clear_triggered: "TPS is low (<tps>). Triggering smart clear."
-log_config_invalid_deletion_interval: "Deletion interval is invalid! Using default value of 60 seconds."
-log_config_invalid_warning_time: "Warning time is invalid! Using default value of 5 seconds."
-log_config_invalid_overload_interval: "Overload check interval is invalid! Using default value of 30 seconds."
-log_config_invalid_update_interval: "Update check interval is invalid! Using default value of 1 day."
+log_plugin_enabled: "<green>FixLag has been enabled."
+log_plugin_disabled: "<yellow>FixLag is disabling..."
+log_plugin_goodbye: "<gray>Goodbye!"
+log_smart_clear_triggered: "<yellow>TPS is low (<aqua><tps><yellow>). Triggering smart clear."
+log_entity_deleted: "<aqua>Deleted <white><count> <aqua>unnecessary entities."
+log_update_available: "<yellow>Update available: <gold>v<version> <gray>- <aqua>https://modrinth.com/plugin/fixlag/"
+log_update_uptodate: "<green>FixLag is up to date."
+log_update_check_failed: "<red>Could not check for updates."
+log_update_check_error: "<red>Error checking for updates: <white><error>"
+log_villager_lobotomized: "<aqua>Lobotomized AI for <white><count> <aqua>trapped villager(s)."
+log_villager_restored: "<aqua>Restored AI to <white><count> <aqua>villager(s) no longer trapped."
+log_panic_activated: "<red>Panic Mode activated! TPS below threshold. Froze <white><count> <red>mobs."
+log_panic_deactivated: "<green>Panic Mode deactivated. TPS recovered. Unfroze <white><count> <green>mobs."
+log_distance_changed: "<aqua>Dynamic Distance: <white><world> <aqua>adjusted. TPS: <white><tps><aqua>. View: <white><view><aqua>, Sim: <white><sim>."
+log_explosion_optimized: "<yellow>Explosion at <white><world> <x>, <y>, <z> <yellow>optimized (TPS: <aqua><tps><yellow>). Blocks: <white><count><yellow>, drops disabled: <white><drops>."
+log_config_invalid_deletion_interval: "<yellow>Config: Deletion interval is invalid! Using default value of 60 seconds."
+log_config_invalid_warning_time: "<yellow>Config: Warning time is invalid! Using default value of 5 seconds."
+log_config_invalid_overload_interval: "<yellow>Config: Overload check interval is invalid! Using default value of 30 seconds."
+log_config_invalid_update_interval: "<yellow>Config: Update check interval is invalid! Using default value of 1 day."
+log_config_invalid_tps_threshold: "<yellow>Config: TPS threshold for <white><feature> <yellow>is invalid (must be 0-20). Using default."
+log_config_invalid_distance_range: "<yellow>Config: <white><type> <yellow>distance min >= max. Using defaults (4-10)."
+log_config_invalid_dynamic_distance_tps: "<yellow>Config: dynamic-distance tps-low-threshold >= tps-high-threshold. Using defaults."
+log_config_invalid_interval: "<yellow>Config: check interval for <white><feature> <yellow>is <= 0. Using default."
+log_config_invalid_cancel_chance: "<yellow>Config: hopper-optimizer cancel-chance must be 0.0-1.0. Using 0.5."
+log_config_invalid_ram_threshold: "<yellow>Config: lag-notifications RAM threshold must be 0-100. Using 90."
+log_config_invalid_ping_threshold: "<yellow>Config: lag-notifications ping threshold must be > 0. Using 150."
+log_config_invalid_xporb_radius: "<yellow>Config: xp-orb-merger radius must be > 0. Using 4.0."
+log_config_invalid_mob_stacking_radius: "<yellow>Config: mob-stacking radius must be > 0. Using 10."
+log_config_invalid_mob_stacking_max: "<yellow>Config: mob-stacking max-stack-size must be > 0. Using 50."
+log_config_panic_recover_lte_threshold: "<yellow>Config: panic-mode recover-tps must be > tps-threshold. Adjusting."
+
+# Startup Logs
+log_startup_version: "<aqua>FixLag <white>v<version> <aqua>loading..."
+log_startup_config_loaded: "<green>Configuration loaded."
+log_startup_features_header: "<aqua>Active features:"
+log_startup_feature_status: "  <gray>- <white><feature><gray>: <status>"
+log_startup_events_registered: "<green>Event listeners registered."
+log_startup_tasks_started: "<green>Background tasks started."
+log_startup_ready: "<green><bold>FixLag v<version> is ready!</bold>"
 
 # Chunk Analysis
 chunk_analysis_started: "<yellow>Analyzing chunks... This may take a moment."
@@ -69,10 +96,6 @@ chunk_analysis_entry: " <gray>- <gold><world> <gray>(<x>, <z>): <green><count> E
 # v3.8 New Messages
 distance_decreased: "<yellow>Server performance is low. View distance decreased to <view> and simulation distance to <sim>."
 distance_increased: "<green>Server performance has improved. View distance increased to <view> and simulation distance to <sim>."
-
-# v3.8 New Logs
-log_explosion_optimized: "Explosion at <world> <x>, <y>, <z> was optimized (TPS: <tps>). Reduced block destruction to <count> and disabled drops: <drops>."
-log_distance_changed: "Dynamic Distance: Adjusted distance in world <world> due to TPS <tps>. View: <view>, Sim: <sim>."
 
 # Optimization Config
 optimize_config_header: "<yellow>--- Optimized Configuration Proposal ---"

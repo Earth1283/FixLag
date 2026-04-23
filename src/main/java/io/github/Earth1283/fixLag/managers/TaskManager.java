@@ -15,7 +15,6 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class TaskManager {
 
@@ -112,7 +111,7 @@ public class TaskManager {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastSmartClearTime >= configManager.getSmartClearCooldownTicks() * 50L) {
                 lastSmartClearTime = currentTime;
-                plugin.getLogger().info(messageManager.getLogMessage("log_smart_clear_triggered", "<tps>", String.format("%.2f", tps)));
+                messageManager.logInfo("log_smart_clear_triggered", "<tps>", String.format("%.2f", tps));
                 deleteAndAnnounce();
             }
         }
@@ -153,7 +152,7 @@ public class TaskManager {
             if (configManager.isLogMemoryStats()) {
                 performanceMonitor.logMemoryUsage();
             }
-            plugin.getLogger().log(Level.INFO, messageManager.getLogMessage("log_entity_deleted", "%fixlag_count%", String.valueOf(deletedCount)));
+            messageManager.logInfo("log_entity_deleted", "<count>", String.valueOf(deletedCount));
         }
     }
 
