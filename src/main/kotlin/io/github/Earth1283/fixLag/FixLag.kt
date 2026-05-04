@@ -6,7 +6,7 @@ import io.github.Earth1283.fixLag.managers.*
 import io.github.Earth1283.fixLag.utils.Metrics
 import org.bukkit.plugin.java.JavaPlugin
 
-class FixLag : JavaPlugin() {
+open class FixLag : JavaPlugin() {
 
     lateinit var configManager: ConfigManager
         private set
