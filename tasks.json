@@ -1,0 +1,7 @@
+[
+  {"id": "task1", "title": "Update Build Configuration and Version", "status": "done"},
+  {"id": "task2", "title": "Core Plugin and Utils", "status": "done"},
+  {"id": "task3", "title": "Refactor Managers", "status": "done"},
+  {"id": "task4", "title": "Refactor Listeners", "status": "done"},
+  {"id": "task5", "title": "Refactor Commands and Tests", "status": "todo"}
+]
