@@ -37,7 +37,7 @@ FixLag is a comprehensive performance optimization plugin designed for modern Mi
 
 ## 🛠️ Development & Building
 
-The project is built using Java 21 and the Gradle wrapper.
+The project is built using Kotlin 1.9.22 (targeting Java 21) and the Gradle wrapper.
 
 **Build Requirements:**
 * JDK 21
@@ -47,4 +47,4 @@ The project is built using Java 21 and the Gradle wrapper.
 ```bash
 ./gradlew build
 ```
-The file will be put at `path/to/fixlag/build/libs/fixlag-x.y.z.jar`.
+The resulting JAR will be located in `build/libs/`.
