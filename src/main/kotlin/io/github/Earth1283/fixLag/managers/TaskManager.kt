@@ -144,7 +144,7 @@ class TaskManager(
                 val isProjectile = entity is org.bukkit.entity.AbstractArrow
 
                 if (shouldDelete || isProjectile) {
-                    if (configManager.isIgnoreCustomNamedItems && entity.getCustomName() != null) {
+                    if (configManager.isIgnoreCustomNamedItems && entity.customName != null) {
                         continue
                     }
 

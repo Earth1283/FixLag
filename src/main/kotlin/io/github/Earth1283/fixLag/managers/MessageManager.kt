@@ -46,12 +46,9 @@ class MessageManager(private val plugin: JavaPlugin) {
     }
 
     fun getMessage(key: String, includePrefix: Boolean, vararg replacements: String): String {
-        var raw = messagesConfig.getString(key) ?: "Error: Message key '$key' not found in messages.yml"
-        for (i in replacements.indices step 2) {
-            if (i + 1 < replacements.size) {
-                raw = raw.replace(replacements[i], replacements[i + 1])
-            }
-        }
+        var raw = (messagesConfig.getString(key) ?: "Error: Message key '$key' not found in messages.yml")
+            .applyReplacements(*replacements)
+
         if (includePrefix) {
             val prefixRaw = messagesConfig.getString("prefix") ?: "<gray>[<green>FixLag<gray>] <reset>"
             raw = prefixRaw + raw
@@ -65,12 +62,9 @@ class MessageManager(private val plugin: JavaPlugin) {
     }
 
     fun getComponentMessage(key: String, includePrefix: Boolean, vararg replacements: String): Component {
-        var raw = messagesConfig.getString(key) ?: "Error: Message key '$key' not found in messages.yml"
-        for (i in replacements.indices step 2) {
-            if (i + 1 < replacements.size) {
-                raw = raw.replace(replacements[i], replacements[i + 1])
-            }
-        }
+        var raw = (messagesConfig.getString(key) ?: "Error: Message key '$key' not found in messages.yml")
+            .applyReplacements(*replacements)
+
         if (includePrefix) {
             val prefixRaw = messagesConfig.getString("prefix") ?: "<gray>[<green>FixLag<gray>] <reset>"
             raw = prefixRaw + raw
@@ -79,30 +73,32 @@ class MessageManager(private val plugin: JavaPlugin) {
     }
 
     fun getLogMessage(key: String, vararg replacements: String): String {
-        var raw = messagesConfig.getString(key) ?: "Error: Log message key '$key' not found in messages.yml"
-        for (i in replacements.indices step 2) {
-            if (i + 1 < replacements.size) {
-                raw = raw.replace(replacements[i], replacements[i + 1])
-            }
-        }
+        val raw = (messagesConfig.getString(key) ?: "Error: Log message key '$key' not found in messages.yml")
+            .applyReplacements(*replacements)
         val comp = miniMessage.deserialize(raw)
         return PlainTextComponentSerializer.plainText().serialize(comp)
     }
 
     fun logInfo(key: String, vararg replacements: String) {
-        var raw = messagesConfig.getString(key) ?: "Error: Log message key '$key' not found in messages.yml"
-        for (i in replacements.indices step 2) {
-            if (i + 1 < replacements.size) raw = raw.replace(replacements[i], replacements[i + 1])
-        }
+        val raw = (messagesConfig.getString(key) ?: "Error: Log message key '$key' not found in messages.yml")
+            .applyReplacements(*replacements)
         plugin.componentLogger.info(miniMessage.deserialize(raw))
     }
 
     fun logWarn(key: String, vararg replacements: String) {
-        var raw = messagesConfig.getString(key) ?: "Error: Log message key '$key' not found in messages.yml"
-        for (i in replacements.indices step 2) {
-            if (i + 1 < replacements.size) raw = raw.replace(replacements[i], replacements[i + 1])
-        }
+        val raw = (messagesConfig.getString(key) ?: "Error: Log message key '$key' not found in messages.yml")
+            .applyReplacements(*replacements)
         plugin.componentLogger.warn(miniMessage.deserialize(raw))
+    }
+
+    private fun String.applyReplacements(vararg replacements: String): String {
+        var result = this
+        for (i in replacements.indices step 2) {
+            if (i + 1 < replacements.size) {
+                result = result.replace(replacements[i], replacements[i + 1])
+            }
+        }
+        return result
     }
 
     fun getRawMessage(key: String): String {

@@ -27,9 +27,8 @@ class PerformanceMonitor(private val messageManager: MessageManager, private val
         val freeNonHeapMB = if (maxNonHeapMB <= 0) -1 else maxNonHeapMB - usedNonHeapMB
 
         val gcMXBeans = ManagementFactory.getGarbageCollectorMXBeans()
-        val gcStats = StringBuilder()
-        for (gcBean in gcMXBeans) {
-            gcStats.append(gcBean.name).append(": Collections=").append(gcBean.collectionCount).append(", Time=").append(gcBean.collectionTime).append("ms\n")
+        val gcStats = gcMXBeans.joinToString("\n") { gcBean ->
+            "${gcBean.name}: Collections=${gcBean.collectionCount}, Time=${gcBean.collectionTime}ms"
         }
 
         val gcType = gcMXBeans.joinToString(", ") { it.name }
@@ -111,14 +110,15 @@ class PerformanceMonitor(private val messageManager: MessageManager, private val
         val avgPing = if (playerCount > 0) totalPing / playerCount else 0
 
         // Calculate World Stats
-        val worldStats = StringBuilder()
-        worldStats.append(messageManager.getRawMessage("server_info_world_header")).append("\n")
-        for (world in Bukkit.getWorlds()) {
-            val worldEntry = messageManager.getRawMessage("server_info_world_entry")
-                .replace("%fixlag_world_name%", world.name)
-                .replace("%fixlag_world_chunks%", world.loadedChunks.size.toString())
-                .replace("%fixlag_world_entities%", world.entityCount.toString())
-            worldStats.append(worldEntry).append("\n")
+        val worldStats = buildString {
+            append(messageManager.getRawMessage("server_info_world_header")).append("\n")
+            val worldEntries = Bukkit.getWorlds().joinToString("\n") { world ->
+                messageManager.getRawMessage("server_info_world_entry")
+                    .replace("%fixlag_world_name%", world.name)
+                    .replace("%fixlag_world_chunks%", world.loadedChunks.size.toString())
+                    .replace("%fixlag_world_entities%", world.entityCount.toString())
+            }
+            append(worldEntries)
         }
 
         val headerRaw = messageManager.getRawMessage("server_info_header")
