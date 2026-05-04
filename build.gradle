@@ -19,14 +19,14 @@ repositories {
     }
 }
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     implementation("net.kyori:adventure-api:4.25.0")
     implementation("net.kyori:adventure-text-minimessage:4.19.0")
     implementation("net.kyori:adventure-text-serializer-legacy:4.19.0")
     implementation("com.google.code.gson:gson:2.10.1")
 
-    testImplementation "org.jetbrains.kotlin:kotlin-test:1.9.22"
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("com.github.seeseemelk:MockBukkit-v1.21:3.102.0")
@@ -51,6 +51,12 @@ tasks.withType(JavaCompile).configureEach {
 
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         options.release.set(targetJavaVersion)
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "21"
     }
 }
 
