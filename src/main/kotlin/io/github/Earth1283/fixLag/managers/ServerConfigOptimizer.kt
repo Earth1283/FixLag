@@ -1,5 +1,6 @@
 package io.github.Earth1283.fixLag.managers
 
+import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
@@ -7,12 +8,37 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 class ServerConfigOptimizer(private val plugin: JavaPlugin, private val messageManager: MessageManager) {
 
-    private val pendingChanges = mutableMapOf<CommandSender, List<ConfigChange>>()
+    private val pendingChanges = ConcurrentHashMap<CommandSender, List<ConfigChange>>()
 
     fun analyze(sender: CommandSender) {
+        sender.sendMessage(messageManager.getMessage("optimize_config_analyzing"))
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+            val changes = collectChanges()
+            Bukkit.getScheduler().runTask(plugin, Runnable {
+                if (changes.isEmpty()) {
+                    sender.sendMessage(messageManager.getComponentMessage("optimize_config_no_changes"))
+                    return@Runnable
+                }
+                pendingChanges[sender] = changes
+                sender.sendMessage(messageManager.getComponentMessage("optimize_config_header"))
+                for (change in changes) {
+                    sender.sendMessage(messageManager.getComponentMessage("optimize_config_entry",
+                        "%file%", change.file.name,
+                        "%key%", change.key,
+                        "%old%", change.currentValue.toString(),
+                        "%new%", change.newValue.toString()
+                    ))
+                }
+                sender.sendMessage(messageManager.getComponentMessage("optimize_config_footer"))
+            })
+        })
+    }
+
+    private fun collectChanges(): List<ConfigChange> {
         val changes = mutableListOf<ConfigChange>()
 
         // Analyze bukkit.yml
@@ -108,23 +134,7 @@ class ServerConfigOptimizer(private val plugin: JavaPlugin, private val messageM
             checkSetting(changes, paperWorldFile, paperWorldConfig, "hopper.ignore-occluding-blocks", false, true)
         }
 
-        if (changes.isEmpty()) {
-            sender.sendMessage(messageManager.getComponentMessage("optimize_config_no_changes"))
-            return
-        }
-
-        pendingChanges[sender] = changes
-
-        sender.sendMessage(messageManager.getComponentMessage("optimize_config_header"))
-        for (change in changes) {
-            sender.sendMessage(messageManager.getComponentMessage("optimize_config_entry",
-                "%file%", change.file.name,
-                "%key%", change.key,
-                "%old%", change.currentValue.toString(),
-                "%new%", change.newValue.toString()
-            ))
-        }
-        sender.sendMessage(messageManager.getComponentMessage("optimize_config_footer"))
+        return changes
     }
 
     private fun checkSetting(changes: MutableList<ConfigChange>, file: File, config: YamlConfiguration, key: String, threshold: Any, optimized: Any) {
@@ -175,51 +185,59 @@ class ServerConfigOptimizer(private val plugin: JavaPlugin, private val messageM
     }
 
     fun applyChanges(sender: CommandSender, overwrite: Boolean) {
-        val changes = pendingChanges[sender]
+        val changes = pendingChanges.remove(sender)
         if (changes == null || changes.isEmpty()) {
             sender.sendMessage(messageManager.getMessage("optimize_config_no_pending"))
             return
         }
 
-        // Group by file
-        val byFile = changes.groupBy { it.file }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+            val errors = mutableListOf<String>()
+            val byFile = changes.groupBy { it.file }
 
-        for ((file, fileChanges) in byFile) {
-            try {
-                if (file.name.endsWith(".yml")) {
-                    val config = YamlConfiguration.loadConfiguration(file)
-                    for (change in fileChanges) {
-                        config.set(change.key, change.newValue)
-                    }
-                    val saveFile = if (overwrite) file else File(file.parent, file.name + ".changed")
-                    config.save(saveFile)
-                } else if (file.name == "server.properties") {
-                    val lines = java.nio.file.Files.readAllLines(file.toPath()).toMutableList()
-                    for (change in fileChanges) {
-                        var found = false
-                        for (i in lines.indices) {
-                            val line = lines[i].trim()
-                            if (line.startsWith("${change.key}=") || line.startsWith("${change.key} =")) {
-                                lines[i] = "${change.key}=${change.newValue}"
-                                found = true
-                                break
+            for ((file, fileChanges) in byFile) {
+                try {
+                    if (file.name.endsWith(".yml")) {
+                        val config = YamlConfiguration.loadConfiguration(file)
+                        for (change in fileChanges) {
+                            config.set(change.key, change.newValue)
+                        }
+                        val saveFile = if (overwrite) file else File(file.parent, file.name + ".changed")
+                        config.save(saveFile)
+                    } else if (file.name == "server.properties") {
+                        val lines = java.nio.file.Files.readAllLines(file.toPath()).toMutableList()
+                        for (change in fileChanges) {
+                            var found = false
+                            for (i in lines.indices) {
+                                val line = lines[i].trim()
+                                if (line.startsWith("${change.key}=") || line.startsWith("${change.key} =")) {
+                                    lines[i] = "${change.key}=${change.newValue}"
+                                    found = true
+                                    break
+                                }
+                            }
+                            if (!found) {
+                                lines.add("${change.key}=${change.newValue}")
                             }
                         }
-                        if (!found) {
-                            lines.add("${change.key}=${change.newValue}")
-                        }
+                        val saveFile = if (overwrite) file else File(file.parent, file.name + ".changed")
+                        java.nio.file.Files.write(saveFile.toPath(), lines)
                     }
-                    val saveFile = if (overwrite) file else File(file.parent, file.name + ".changed")
-                    java.nio.file.Files.write(saveFile.toPath(), lines)
+                } catch (e: IOException) {
+                    errors.add(e.message ?: "unknown")
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
-                sender.sendMessage(messageManager.getMessage("optimize_config_error", "%error%", e.message ?: "unknown"))
             }
-        }
 
-        sender.sendMessage(messageManager.getMessage("optimize_config_applied"))
-        pendingChanges.remove(sender)
+            Bukkit.getScheduler().runTask(plugin, Runnable {
+                if (errors.isEmpty()) {
+                    sender.sendMessage(messageManager.getMessage("optimize_config_applied"))
+                } else {
+                    errors.forEach { err ->
+                        sender.sendMessage(messageManager.getMessage("optimize_config_error", "%error%", err))
+                    }
+                }
+            })
+        })
     }
 
     fun rejectChanges(sender: CommandSender) {

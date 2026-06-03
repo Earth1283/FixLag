@@ -4,3 +4,6 @@
 /build/classes/java/main/
 *.DS_Store
 *.env
+.idea/
+.vscode/
+

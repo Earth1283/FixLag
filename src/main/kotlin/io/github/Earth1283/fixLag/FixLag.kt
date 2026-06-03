@@ -107,6 +107,7 @@ open class FixLag : JavaPlugin() {
         server.pluginManager.registerEvents(spawnerOptimizer, this)
         server.pluginManager.registerEvents(armorStandOptimizer, this)
         server.pluginManager.registerEvents(hopperOptimizer, this)
+        server.pluginManager.registerEvents(panicModeManager, this)
         messageManager.logInfo("log_startup_events_registered")
 
         taskManager.startDeletionTask()
@@ -122,6 +123,7 @@ open class FixLag : JavaPlugin() {
             experienceOrbMerger.runTaskTimer(this, 20L * 5, configManager.xpOrbMergerCheckIntervalTicks.toLong())
         }
         updateChecker.startUpdateCheckTask()
+        deletedItemsManager.loadItemsFromDisk()
         messageManager.logInfo("log_startup_tasks_started")
 
         Metrics(this, 28156)
@@ -135,6 +137,7 @@ open class FixLag : JavaPlugin() {
     }
 
     override fun onDisable() {
+        deletedItemsManager.saveItemsToDisk()
         messageManager.logInfo("log_plugin_disabled")
         messageManager.logInfo("log_plugin_goodbye")
     }

@@ -77,6 +77,7 @@ log_config_invalid_xporb_radius: "<yellow>Config: xp-orb-merger radius must be >
 log_config_invalid_mob_stacking_radius: "<yellow>Config: mob-stacking radius must be > 0. Using 10."
 log_config_invalid_mob_stacking_max: "<yellow>Config: mob-stacking max-stack-size must be > 0. Using 50."
 log_config_panic_recover_lte_threshold: "<yellow>Config: panic-mode recover-tps must be > tps-threshold. Adjusting."
+log_config_invalid_hopper_recover_threshold: "<yellow>Config: hopper-optimizer recover-tps-threshold must be > tps-threshold. Adjusting."
 
 # Startup Logs
 log_startup_version: "<aqua>FixLag <white>v<version> <aqua>loading..."
@@ -111,3 +112,23 @@ optimize_config_error: "<red>An error occurred while saving the configuration: %
 lag_alert_tps: "<red><bold>WARNING:</bold> <yellow>Server TPS has dropped to <red>%fixlag_tps%</red>!"
 lag_alert_ram: "<red><bold>WARNING:</bold> <yellow>Server RAM usage is critically high (<red>%fixlag_ram_percent%%</red>)!"
 lag_alert_ping: "<red><bold>WARNING:</bold> <yellow>Average player ping is very high (<red>%fixlag_avg_ping% ms</red>)!"
+
+# Retrieve item success (used when a player retrieves an item from the GUI)
+retrieve_item_success: "<green>Retrieved <white>%item%<green>."
+
+# Optimize Config
+optimize_config_analyzing: "<yellow>Analyzing server configuration files..."
+
+# Status Command (/fixlag status)
+status_header: "<#87CEEB>━━━ <bold><#90EE90>ꜰɪxʟᴀɢ</#90EE90> Status</#87CEEB> ━━━"
+status_tps: "<gray> TPS: <white><tps1> <gray>/ <white><tps5> <gray>/ <white><tps15> <dark_gray>(1m / 5m / 15m)"
+status_panic: "<gray> Panic Mode: <state> <dark_gray>(<frozen> frozen mobs)"
+status_smart_clear: "<gray> Smart Clear: <enabled> <dark_gray>(threshold: <threshold> TPS)"
+status_recovery_queue: "<gray> Recovery Queue: <white><count> items"
+status_features_header: "<#87CEEB>━━━ Features ━━━"
+status_feature_entry: "  <gray><feature>: <state>"
+
+# Config validation logs (persistence)
+log_config_invalid_persistence_max_items: "<yellow>Config: deleted-items-persistence max-stored-items must be > 0. Using 500."
+log_config_invalid_persistence_expiry: "<yellow>Config: deleted-items-persistence expiry-seconds must be > 0. Using 3600."
+log_config_invalid_persistence_cleanup: "<yellow>Config: deleted-items-persistence cleanup-seconds must be > 0. Using 300."

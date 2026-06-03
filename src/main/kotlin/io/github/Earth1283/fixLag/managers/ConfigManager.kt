@@ -148,6 +148,8 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         private set
     var hopperOptimizerTpsThreshold: Double = 16.0
         private set
+    var hopperOptimizerRecoverTpsThreshold: Double = 17.0
+        private set
     var hopperOptimizerCancelChance: Double = 0.5
         private set
 
@@ -157,6 +159,16 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
     var collisionOptimizerTpsThreshold: Double = 16.0
         private set
     var collisionOptimizerCheckIntervalTicks: Long = 30 * 20L
+        private set
+
+    // Deleted Items Persistence Config
+    var isDeletedItemsPersistenceEnabled: Boolean = true
+        private set
+    var deletedItemsPersistenceMaxItems: Int = 500
+        private set
+    var deletedItemsPersistenceExpirySeconds: Long = 3600
+        private set
+    var deletedItemsPersistenceCleanupSeconds: Long = 300
         private set
 
     init {
@@ -261,12 +273,19 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         // Load Hopper Optimizer Config
         isHopperOptimizerEnabled = config.getBoolean("hopper-optimizer.enabled", true)
         hopperOptimizerTpsThreshold = config.getSafeDouble("hopper-optimizer.tps-threshold", 16.0)
+        hopperOptimizerRecoverTpsThreshold = config.getSafeDouble("hopper-optimizer.recover-tps-threshold", 17.0)
         hopperOptimizerCancelChance = config.getSafeDouble("hopper-optimizer.cancel-chance", 0.5)
 
         // Load Collision Optimizer Config
         isCollisionOptimizerEnabled = config.getBoolean("collision-optimizer.enabled", true)
         collisionOptimizerTpsThreshold = config.getSafeDouble("collision-optimizer.tps-threshold", 16.0)
         collisionOptimizerCheckIntervalTicks = config.getLong("collision-optimizer.check-interval-seconds", 30) * 20L
+
+        // Load Deleted Items Persistence Config
+        isDeletedItemsPersistenceEnabled = config.getBoolean("deleted-items-persistence.enabled", true)
+        deletedItemsPersistenceMaxItems = config.getInt("deleted-items-persistence.max-stored-items", 500)
+        deletedItemsPersistenceExpirySeconds = config.getLong("deleted-items-persistence.expiry-seconds", 3600)
+        deletedItemsPersistenceCleanupSeconds = config.getLong("deleted-items-persistence.cleanup-seconds", 300)
 
         validateConfigValues()
     }
@@ -355,6 +374,10 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         }
 
         // Misc range checks
+        if (hopperOptimizerRecoverTpsThreshold <= hopperOptimizerTpsThreshold) {
+            messageManager.logWarn("log_config_invalid_hopper_recover_threshold")
+            hopperOptimizerRecoverTpsThreshold = hopperOptimizerTpsThreshold + 1.0
+        }
         if (hopperOptimizerCancelChance < 0 || hopperOptimizerCancelChance > 1.0) {
             messageManager.logWarn("log_config_invalid_cancel_chance")
             hopperOptimizerCancelChance = 0.5
@@ -378,6 +401,19 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         if (mobStackingMaxStackSize <= 0) {
             messageManager.logWarn("log_config_invalid_mob_stacking_max")
             mobStackingMaxStackSize = 50
+        }
+
+        if (deletedItemsPersistenceMaxItems <= 0) {
+            messageManager.logWarn("log_config_invalid_persistence_max_items")
+            deletedItemsPersistenceMaxItems = 500
+        }
+        if (deletedItemsPersistenceExpirySeconds <= 0) {
+            messageManager.logWarn("log_config_invalid_persistence_expiry")
+            deletedItemsPersistenceExpirySeconds = 3600
+        }
+        if (deletedItemsPersistenceCleanupSeconds <= 0) {
+            messageManager.logWarn("log_config_invalid_persistence_cleanup")
+            deletedItemsPersistenceCleanupSeconds = 300
         }
     }
 }

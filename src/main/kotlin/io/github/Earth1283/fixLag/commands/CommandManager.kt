@@ -2,6 +2,7 @@ package io.github.Earth1283.fixLag.commands
 
 import io.github.Earth1283.fixLag.FixLag
 import io.github.Earth1283.fixLag.managers.*
+import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabExecutor
@@ -50,6 +51,7 @@ class CommandManager(
                 if (sender.hasPermission("fixlag.checkchunks")) subcommands.add("checkchunks")
                 if (sender.hasPermission("fixlag.optimizeconfig")) subcommands.add("optimizeconfig")
                 if (sender.hasPermission("fixlag.checkredstone")) subcommands.add("checkredstone")
+                if (sender.hasPermission("fixlag.status")) subcommands.add("status")
 
                 return subcommands.filter { it.startsWith(args[0], ignoreCase = true) }
             }
@@ -126,6 +128,14 @@ class CommandManager(
                     }
                     return true
                 }
+                "status" -> {
+                    if (!sender.hasPermission("fixlag.status")) {
+                        sender.sendMessage(messageManager.getMessage("permission_denied"))
+                        return true
+                    }
+                    handleStatusCommand(sender)
+                    return true
+                }
             }
         }
 
@@ -137,6 +147,54 @@ class CommandManager(
         sender.sendMessage(messageManager.getMessage("entity_clear_manual"))
         taskManager.deleteAndAnnounce()
         return true
+    }
+
+    private fun handleStatusCommand(sender: CommandSender) {
+        val fixLag = plugin as FixLag
+        val config = fixLag.configManager
+        val tps = Bukkit.getServer().tps
+        val tps1 = tps[0].coerceAtMost(20.0)
+        val tps5 = tps[1].coerceAtMost(20.0)
+        val tps15 = tps[2].coerceAtMost(20.0)
+        val isPanic = fixLag.panicModeManager.isPanicActive
+        val frozenMobs = fixLag.panicModeManager.frozenMobCount
+        val queuedItems = deletedItemsManager.deletedItemCount
+
+        sender.sendMessage(messageManager.getComponentMessage("status_header", false))
+        sender.sendMessage(messageManager.getComponentMessage("status_tps",
+            "<tps1>", String.format("%.2f", tps1),
+            "<tps5>", String.format("%.2f", tps5),
+            "<tps15>", String.format("%.2f", tps15)))
+        sender.sendMessage(messageManager.getComponentMessage("status_panic",
+            "<state>", if (isPanic) "<red>ACTIVE" else "<green>Inactive",
+            "<frozen>", frozenMobs.toString()))
+        sender.sendMessage(messageManager.getComponentMessage("status_smart_clear",
+            "<enabled>", if (config.isSmartClearEnabled) "<green>✓ Enabled" else "<gray>✗ Disabled",
+            "<threshold>", config.smartClearTpsThreshold.toString()))
+        sender.sendMessage(messageManager.getComponentMessage("status_recovery_queue",
+            "<count>", queuedItems.toString()))
+        sender.sendMessage(messageManager.getComponentMessage("status_features_header", false))
+
+        val features = listOf(
+            "Panic Mode" to config.isPanicModeEnabled,
+            "Smart Clear" to config.isSmartClearEnabled,
+            "Mob Stacking" to config.isMobStackingEnabled,
+            "Spawner Optimizer" to config.isSpawnerOptimizerEnabled,
+            "Hopper Optimizer" to config.isHopperOptimizerEnabled,
+            "Collision Optimizer" to config.isCollisionOptimizerEnabled,
+            "Armor Stand Optimizer" to config.isArmorStandOptimizerEnabled,
+            "XP Orb Merger" to config.isXpOrbMergerEnabled,
+            "Explosion Optimizer" to config.isExplosionOptimizationEnabled,
+            "Dynamic Distance" to config.isDynamicDistanceEnabled,
+            "Chunk Entity Limits" to config.isChunkEntityLimitsEnabled,
+            "Villager Lobotomizer" to config.isVillagerLobotomizationEnabled,
+            "Lag Notifications" to config.isLagNotificationsEnabled
+        )
+        for ((name, enabled) in features) {
+            sender.sendMessage(messageManager.getComponentMessage("status_feature_entry", false,
+                "<feature>", name,
+                "<state>", if (enabled) "<green>✓" else "<gray>✗"))
+        }
     }
 
     private fun handleGcInfoCommand(sender: CommandSender): Boolean {

@@ -11,18 +11,30 @@ import java.util.concurrent.ThreadLocalRandom
 
 class HopperOptimizer(private val plugin: FixLag) : Listener {
 
+    // Hysteresis: enter throttle mode when TPS drops below threshold, exit only when TPS
+    // recovers above recover-tps-threshold. Prevents flickering at borderline TPS values.
+    @Volatile private var isThrottling = false
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onHopperMove(event: InventoryMoveItemEvent) {
         if (!plugin.configManager.isHopperOptimizerEnabled) return
-
         if (event.source.type != InventoryType.HOPPER) return
 
         val tps = Bukkit.getServer().tps[0]
-        if (tps < plugin.configManager.hopperOptimizerTpsThreshold) {
-            val chance = plugin.configManager.hopperOptimizerCancelChance
-            if (ThreadLocalRandom.current().nextDouble() < chance) {
-                event.isCancelled = true
+        val config = plugin.configManager
+
+        if (isThrottling) {
+            if (tps >= config.hopperOptimizerRecoverTpsThreshold) {
+                isThrottling = false
             }
+        } else {
+            if (tps < config.hopperOptimizerTpsThreshold) {
+                isThrottling = true
+            }
+        }
+
+        if (isThrottling && ThreadLocalRandom.current().nextDouble() < config.hopperOptimizerCancelChance) {
+            event.isCancelled = true
         }
     }
 }

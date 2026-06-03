@@ -181,6 +181,10 @@ hopper-optimizer:
   enabled: true
   # TPS threshold to activate optimization.
   tps-threshold: 16.0
+  # TPS must recover above this value before throttling stops.
+  # Must be greater than tps-threshold. The gap between the two values prevents flickering
+  # when TPS hovers right at the threshold (hysteresis band).
+  recover-tps-threshold: 17.0
   # Probability (0.0 to 1.0) of cancelling a hopper move event when TPS is below the threshold.
   # 0.5 means 50% of hopper transfers will be skipped.
   cancel-chance: 0.5
@@ -192,4 +196,18 @@ collision-optimizer:
   tps-threshold: 16.0
   # How often (in seconds) to check and adjust collisions.
   check-interval-seconds: 30
+
+# Deleted Items Persistence: Saves the recovery queue to disk so items survive server restarts.
+deleted-items-persistence:
+  # Set to false to keep the old in-memory-only behavior (items are lost on restart).
+  enabled: true
+  # Maximum number of items to store in the persistence file.
+  # Excess items beyond this limit are dropped (oldest first).
+  max-stored-items: 500
+  # How long (in seconds) a stored item remains eligible for restoration on restart.
+  # Items older than this will not be loaded from disk. Default: 3600 (1 hour).
+  expiry-seconds: 3600
+  # How long (in seconds) items remain in the in-memory recovery queue before being cleared.
+  # Default: 300 (5 minutes). Players have this window to use /fixlag retrieve.
+  cleanup-seconds: 300
 

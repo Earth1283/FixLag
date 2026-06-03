@@ -70,20 +70,9 @@ class DynamicDistanceManager(private val plugin: FixLag) : BukkitRunnable() {
         }
     }
 
-    private fun getSimulationDistance(world: World): Int {
-        return try {
-            val method = world.javaClass.getMethod("getSimulationDistance")
-            method.invoke(world) as Int
-        } catch (e: Exception) {
-            world.viewDistance
-        }
-    }
+    private fun getSimulationDistance(world: World): Int = world.simulationDistance
 
     private fun setSimulationDistance(world: World, distance: Int) {
-        try {
-            val method = world.javaClass.getMethod("setSimulationDistance", Int::class.javaPrimitiveType)
-            method.invoke(world, distance)
-        } catch (ignored: Exception) {
-        }
+        world.simulationDistance = distance
     }
 }

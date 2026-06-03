@@ -41,6 +41,9 @@ permissions:
   fixlag.notify.lag:
     description: Allows players to receive notifications when server lag is detected.
     default: op
+  fixlag.status:
+    description: Allows players to use /fixlag status to view the FixLag status dashboard.
+    default: op
 commands:
   fixlag:
     description: Manually triggers the entity deletion.
