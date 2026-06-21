@@ -126,7 +126,46 @@ open class FixLag : JavaPlugin() {
         deletedItemsManager.loadItemsFromDisk()
         messageManager.logInfo("log_startup_tasks_started")
 
-        Metrics(this, 28156)
+        val metrics = Metrics(this, 28156)
+
+        metrics.addCustomChart(Metrics.AdvancedPie("enabled_features") {
+            buildMap {
+                if (configManager.isMobStackingEnabled) put("Mob Stacking", 1)
+                if (configManager.isChunkEntityLimitsEnabled) put("Chunk Entity Limits", 1)
+                if (configManager.isVillagerLobotomizationEnabled) put("Villager Lobotomization", 1)
+                if (configManager.isSmartClearEnabled) put("Smart Clear", 1)
+                if (configManager.isPanicModeEnabled) put("Panic Mode", 1)
+                if (configManager.isSpawnerOptimizerEnabled) put("Spawner Optimizer", 1)
+                if (configManager.isArmorStandOptimizerEnabled) put("Armor Stand Optimizer", 1)
+                if (configManager.isXpOrbMergerEnabled) put("XP Orb Merger", 1)
+                if (configManager.isExplosionOptimizationEnabled) put("Explosion Optimization", 1)
+                if (configManager.isDynamicDistanceEnabled) put("Dynamic Distance", 1)
+                if (configManager.isHopperOptimizerEnabled) put("Hopper Optimizer", 1)
+                if (configManager.isCollisionOptimizerEnabled) put("Collision Optimizer", 1)
+                if (configManager.isDeletedItemsPersistenceEnabled) put("Item Persistence", 1)
+            }
+        })
+
+        metrics.addCustomChart(Metrics.SimplePie("entity_clear_interval") {
+            val seconds = configManager.deletionIntervalTicks / 20
+            when {
+                seconds <= 30 -> "≤30s"
+                seconds <= 60 -> "31–60s"
+                seconds <= 120 -> "61–120s"
+                else -> ">120s"
+            }
+        })
+
+        metrics.addCustomChart(Metrics.SimplePie("panic_mode_tps_threshold") {
+            val tps = configManager.panicModeTpsThreshold
+            when {
+                !configManager.isPanicModeEnabled -> "Disabled"
+                tps <= 10.0 -> "≤10"
+                tps <= 14.0 -> "11–14"
+                tps <= 16.0 -> "15–16"
+                else -> ">16"
+            }
+        })
 
         messageManager.logInfo("log_startup_ready", "<version>", description.version)
     }
