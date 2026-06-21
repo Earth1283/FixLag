@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.github.Earth1283'
-version = '3.15.1'
+version = '3.15.2'
 
 repositories {
     mavenCentral()

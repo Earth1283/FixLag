@@ -131,16 +131,18 @@ class DeletedItemsManager(private val plugin: JavaPlugin) : Listener {
 
         if (event.slot < 45) {
             if (event.isLeftClick || event.isRightClick) {
-                player.inventory.addItem(clicked)
-                val toRemove = deletedItems.firstOrNull { it.item == clicked }
-                if (toRemove != null) {
-                    deletedItems.remove(toRemove)
-                    if (configManager.isDeletedItemsPersistenceEnabled) {
-                        Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable { saveItemsToDisk() })
-                    }
+                val allItems = ArrayList(deletedItems)
+                val itemIndex = page * ITEMS_PER_PAGE + event.slot
+                if (itemIndex >= allItems.size) return
+
+                val storedItem = allItems[itemIndex]
+                player.inventory.addItem(storedItem.item.clone())
+                deletedItems.remove(storedItem)
+                if (configManager.isDeletedItemsPersistenceEnabled) {
+                    Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable { saveItemsToDisk() })
                 }
                 updateAllOpenViews()
-                player.sendMessage(messageManager.getMessage("retrieve_item_success", "%item%", clicked.type.toString()))
+                player.sendMessage(messageManager.getMessage("retrieve_item_success", "%item%", storedItem.item.type.toString()))
             }
         }
     }
