@@ -20,7 +20,7 @@ class DeletedItemsManager(private val plugin: JavaPlugin) : Listener {
     private val configManager: ConfigManager = (plugin as FixLag).configManager
     private val messageManager: MessageManager = (plugin as FixLag).messageManager
 
-    private data class StoredItem(val item: ItemStack, val addedAt: Long)
+    private class StoredItem(val item: ItemStack, val addedAt: Long)
 
     private val deletedItems = ConcurrentLinkedQueue<StoredItem>()
     private val playerPages = mutableMapOf<UUID, Int>()
