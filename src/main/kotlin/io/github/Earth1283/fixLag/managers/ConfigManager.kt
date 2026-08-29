@@ -161,6 +161,12 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
     var collisionOptimizerCheckIntervalTicks: Long = 30 * 20L
         private set
 
+    // Bug Fixes Config
+    var isDolphinDrowningFixEnabled: Boolean = true
+        private set
+    var isTraderLlamaDespawnFixEnabled: Boolean = true
+        private set
+
     // Deleted Items Persistence Config
     var isDeletedItemsPersistenceEnabled: Boolean = true
         private set
@@ -280,6 +286,10 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         isCollisionOptimizerEnabled = config.getBoolean("collision-optimizer.enabled", true)
         collisionOptimizerTpsThreshold = config.getSafeDouble("collision-optimizer.tps-threshold", 16.0)
         collisionOptimizerCheckIntervalTicks = config.getLong("collision-optimizer.check-interval-seconds", 30) * 20L
+
+        // Load Bug Fixes Config
+        isDolphinDrowningFixEnabled = config.getBoolean("bug-fixes.dolphin-drowning.enabled", true)
+        isTraderLlamaDespawnFixEnabled = config.getBoolean("bug-fixes.trader-llama-despawn.enabled", true)
 
         // Load Deleted Items Persistence Config
         isDeletedItemsPersistenceEnabled = config.getBoolean("deleted-items-persistence.enabled", true)

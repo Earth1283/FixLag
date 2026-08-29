@@ -211,3 +211,16 @@ deleted-items-persistence:
   # Default: 300 (5 minutes). Players have this window to use /fixlag retrieve.
   cleanup-seconds: 300
 
+# Bug Fixes: Togglable patches for known upstream Minecraft bugs (bugs.mojang.com / Mojira).
+bug-fixes:
+  # MC-306840: Dolphins still drown themselves when no players are nearby.
+  # Their air-surfacing AI stalls without a nearby player to keep it ticking, so they
+  # suffocate. Since dolphins are never meant to die this way, drowning damage is cancelled.
+  dolphin-drowning:
+    enabled: true
+  # MC-153831: Trader llamas spawned from breeding can despawn.
+  # Trader llamas are meant to be persistent (never despawn) so they don't strand their
+  # Wandering Trader, but a baby produced via breeding doesn't inherit that flag.
+  trader-llama-despawn:
+    enabled: true
+

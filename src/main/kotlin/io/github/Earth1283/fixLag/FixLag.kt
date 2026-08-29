@@ -50,6 +50,10 @@ open class FixLag : JavaPlugin() {
         private set
     lateinit var collisionOptimizer: CollisionOptimizer
         private set
+    lateinit var dolphinDrowningFix: DolphinDrowningFix
+        private set
+    lateinit var traderLlamaDespawnFix: TraderLlamaDespawnFix
+        private set
 
     companion object {
         lateinit var instance: FixLag
@@ -79,6 +83,8 @@ open class FixLag : JavaPlugin() {
         experienceOrbMerger = ExperienceOrbMerger(this)
         hopperOptimizer = HopperOptimizer(this)
         collisionOptimizer = CollisionOptimizer(this)
+        dolphinDrowningFix = DolphinDrowningFix(this)
+        traderLlamaDespawnFix = TraderLlamaDespawnFix(this)
         val configOptimizer = ServerConfigOptimizer(this, messageManager)
         taskManager = TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager, lagNotifier)
         updateChecker = UpdateChecker(this, configManager, messageManager)
@@ -99,6 +105,8 @@ open class FixLag : JavaPlugin() {
         logFeature("Collision Optimizer", configManager.isCollisionOptimizerEnabled)
         logFeature("Chunk Entity Limits", configManager.isChunkEntityLimitsEnabled)
         logFeature("Villager Lobotomizer", configManager.isVillagerLobotomizationEnabled)
+        logFeature("Dolphin Drowning Fix (MC-306840)", configManager.isDolphinDrowningFixEnabled)
+        logFeature("Trader Llama Despawn Fix (MC-153831)", configManager.isTraderLlamaDespawnFixEnabled)
 
         server.pluginManager.registerEvents(mobStacker, this)
         server.pluginManager.registerEvents(explosionOptimizer, this)
@@ -108,6 +116,8 @@ open class FixLag : JavaPlugin() {
         server.pluginManager.registerEvents(armorStandOptimizer, this)
         server.pluginManager.registerEvents(hopperOptimizer, this)
         server.pluginManager.registerEvents(panicModeManager, this)
+        server.pluginManager.registerEvents(dolphinDrowningFix, this)
+        server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
         messageManager.logInfo("log_startup_events_registered")
 
         taskManager.startDeletionTask()
@@ -143,6 +153,8 @@ open class FixLag : JavaPlugin() {
                 if (configManager.isHopperOptimizerEnabled) put("Hopper Optimizer", 1)
                 if (configManager.isCollisionOptimizerEnabled) put("Collision Optimizer", 1)
                 if (configManager.isDeletedItemsPersistenceEnabled) put("Item Persistence", 1)
+                if (configManager.isDolphinDrowningFixEnabled) put("Dolphin Drowning Fix", 1)
+                if (configManager.isTraderLlamaDespawnFixEnabled) put("Trader Llama Despawn Fix", 1)
             }
         })
 

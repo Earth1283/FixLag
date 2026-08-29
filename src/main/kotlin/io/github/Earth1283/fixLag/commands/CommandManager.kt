@@ -188,7 +188,9 @@ class CommandManager(
             "Dynamic Distance" to config.isDynamicDistanceEnabled,
             "Chunk Entity Limits" to config.isChunkEntityLimitsEnabled,
             "Villager Lobotomizer" to config.isVillagerLobotomizationEnabled,
-            "Lag Notifications" to config.isLagNotificationsEnabled
+            "Lag Notifications" to config.isLagNotificationsEnabled,
+            "Dolphin Drowning Fix (MC-306840)" to config.isDolphinDrowningFixEnabled,
+            "Trader Llama Despawn Fix (MC-153831)" to config.isTraderLlamaDespawnFixEnabled
         )
         for ((name, enabled) in features) {
             sender.sendMessage(messageManager.getComponentMessage("status_feature_entry", false,
