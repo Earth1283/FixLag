@@ -223,4 +223,12 @@ bug-fixes:
   # Wandering Trader, but a baby produced via breeding doesn't inherit that flag.
   trader-llama-despawn:
     enabled: true
+  # MC-311414: Players can teleport arbitrary distances by using a desynced carrot on a
+  # stick on a pig. Caps how far a ridden pig may move in a single tick; anything beyond
+  # that is treated as a desync and snapped back (VehicleMoveEvent can't be cancelled).
+  pig-teleport-exploit:
+    enabled: true
+    # Max blocks a saddled pig carrying a player may move in one tick. Keep this above a
+    # pig's normal (even carrot-boosted) speed to avoid false positives; lower it if needed.
+    max-distance-per-tick: 1.0
 

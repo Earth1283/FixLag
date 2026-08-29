@@ -54,6 +54,8 @@ open class FixLag : JavaPlugin() {
         private set
     lateinit var traderLlamaDespawnFix: TraderLlamaDespawnFix
         private set
+    lateinit var pigTeleportExploitFix: PigTeleportExploitFix
+        private set
 
     companion object {
         lateinit var instance: FixLag
@@ -85,6 +87,7 @@ open class FixLag : JavaPlugin() {
         collisionOptimizer = CollisionOptimizer(this)
         dolphinDrowningFix = DolphinDrowningFix(this)
         traderLlamaDespawnFix = TraderLlamaDespawnFix(this)
+        pigTeleportExploitFix = PigTeleportExploitFix(this)
         val configOptimizer = ServerConfigOptimizer(this, messageManager)
         taskManager = TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager, lagNotifier)
         updateChecker = UpdateChecker(this, configManager, messageManager)
@@ -107,6 +110,7 @@ open class FixLag : JavaPlugin() {
         logFeature("Villager Lobotomizer", configManager.isVillagerLobotomizationEnabled)
         logFeature("Dolphin Drowning Fix (MC-306840)", configManager.isDolphinDrowningFixEnabled)
         logFeature("Trader Llama Despawn Fix (MC-153831)", configManager.isTraderLlamaDespawnFixEnabled)
+        logFeature("Pig Teleport Exploit Fix (MC-311414)", configManager.isPigTeleportExploitFixEnabled)
 
         server.pluginManager.registerEvents(mobStacker, this)
         server.pluginManager.registerEvents(explosionOptimizer, this)
@@ -118,6 +122,7 @@ open class FixLag : JavaPlugin() {
         server.pluginManager.registerEvents(panicModeManager, this)
         server.pluginManager.registerEvents(dolphinDrowningFix, this)
         server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
+        server.pluginManager.registerEvents(pigTeleportExploitFix, this)
         messageManager.logInfo("log_startup_events_registered")
 
         taskManager.startDeletionTask()
@@ -155,6 +160,7 @@ open class FixLag : JavaPlugin() {
                 if (configManager.isDeletedItemsPersistenceEnabled) put("Item Persistence", 1)
                 if (configManager.isDolphinDrowningFixEnabled) put("Dolphin Drowning Fix", 1)
                 if (configManager.isTraderLlamaDespawnFixEnabled) put("Trader Llama Despawn Fix", 1)
+                if (configManager.isPigTeleportExploitFixEnabled) put("Pig Teleport Exploit Fix", 1)
             }
         })
 
