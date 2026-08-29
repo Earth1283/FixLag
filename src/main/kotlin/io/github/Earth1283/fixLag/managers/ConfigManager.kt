@@ -170,6 +170,10 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         private set
     var pigTeleportExploitMaxDistancePerTick: Double = 1.0
         private set
+    var isTntRaycastFixEnabled: Boolean = true
+        private set
+    var tntRaycastFixMaxVelocityPerTick: Double = 10.0
+        private set
 
     // Deleted Items Persistence Config
     var isDeletedItemsPersistenceEnabled: Boolean = true
@@ -296,6 +300,8 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         isTraderLlamaDespawnFixEnabled = config.getBoolean("bug-fixes.trader-llama-despawn.enabled", true)
         isPigTeleportExploitFixEnabled = config.getBoolean("bug-fixes.pig-teleport-exploit.enabled", true)
         pigTeleportExploitMaxDistancePerTick = config.getSafeDouble("bug-fixes.pig-teleport-exploit.max-distance-per-tick", 1.0)
+        isTntRaycastFixEnabled = config.getBoolean("bug-fixes.tnt-raycast.enabled", true)
+        tntRaycastFixMaxVelocityPerTick = config.getSafeDouble("bug-fixes.tnt-raycast.max-velocity-per-tick", 10.0)
 
         // Load Deleted Items Persistence Config
         isDeletedItemsPersistenceEnabled = config.getBoolean("deleted-items-persistence.enabled", true)
@@ -422,6 +428,10 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         if (pigTeleportExploitMaxDistancePerTick <= 0) {
             messageManager.logWarn("log_config_invalid_pig_teleport_distance")
             pigTeleportExploitMaxDistancePerTick = 1.0
+        }
+        if (tntRaycastFixMaxVelocityPerTick <= 0) {
+            messageManager.logWarn("log_config_invalid_tnt_velocity")
+            tntRaycastFixMaxVelocityPerTick = 10.0
         }
         if (deletedItemsPersistenceMaxItems <= 0) {
             messageManager.logWarn("log_config_invalid_persistence_max_items")

@@ -74,6 +74,7 @@ log_config_invalid_cancel_chance: "<yellow>Config: hopper-optimizer cancel-chanc
 log_config_invalid_ram_threshold: "<yellow>Config: lag-notifications RAM threshold must be 0-100. Using 90."
 log_config_invalid_ping_threshold: "<yellow>Config: lag-notifications ping threshold must be > 0. Using 150."
 log_config_invalid_pig_teleport_distance: "<yellow>Config: bug-fixes pig-teleport-exploit max-distance-per-tick must be > 0. Using 1.0."
+log_config_invalid_tnt_velocity: "<yellow>Config: bug-fixes tnt-raycast max-velocity-per-tick must be > 0. Using 10.0."
 log_config_invalid_xporb_radius: "<yellow>Config: xp-orb-merger radius must be > 0. Using 4.0."
 log_config_invalid_mob_stacking_radius: "<yellow>Config: mob-stacking radius must be > 0. Using 10."
 log_config_invalid_mob_stacking_max: "<yellow>Config: mob-stacking max-stack-size must be > 0. Using 50."

@@ -191,7 +191,8 @@ class CommandManager(
             "Lag Notifications" to config.isLagNotificationsEnabled,
             "Dolphin Drowning Fix (MC-306840)" to config.isDolphinDrowningFixEnabled,
             "Trader Llama Despawn Fix (MC-153831)" to config.isTraderLlamaDespawnFixEnabled,
-            "Pig Teleport Exploit Fix (MC-311414)" to config.isPigTeleportExploitFixEnabled
+            "Pig Teleport Exploit Fix (MC-311414)" to config.isPigTeleportExploitFixEnabled,
+            "TNT Raycast Fix (MC-263882)" to config.isTntRaycastFixEnabled
         )
         for ((name, enabled) in features) {
             sender.sendMessage(messageManager.getComponentMessage("status_feature_entry", false,

@@ -56,6 +56,8 @@ open class FixLag : JavaPlugin() {
         private set
     lateinit var pigTeleportExploitFix: PigTeleportExploitFix
         private set
+    lateinit var tntRaycastFix: TntRaycastFix
+        private set
 
     companion object {
         lateinit var instance: FixLag
@@ -88,6 +90,7 @@ open class FixLag : JavaPlugin() {
         dolphinDrowningFix = DolphinDrowningFix(this)
         traderLlamaDespawnFix = TraderLlamaDespawnFix(this)
         pigTeleportExploitFix = PigTeleportExploitFix(this)
+        tntRaycastFix = TntRaycastFix(this)
         val configOptimizer = ServerConfigOptimizer(this, messageManager)
         taskManager = TaskManager(this, configManager, messageManager, performanceMonitor, deletedItemsManager, dynamicDistanceManager, lagNotifier)
         updateChecker = UpdateChecker(this, configManager, messageManager)
@@ -111,6 +114,7 @@ open class FixLag : JavaPlugin() {
         logFeature("Dolphin Drowning Fix (MC-306840)", configManager.isDolphinDrowningFixEnabled)
         logFeature("Trader Llama Despawn Fix (MC-153831)", configManager.isTraderLlamaDespawnFixEnabled)
         logFeature("Pig Teleport Exploit Fix (MC-311414)", configManager.isPigTeleportExploitFixEnabled)
+        logFeature("TNT Raycast Fix (MC-263882)", configManager.isTntRaycastFixEnabled)
 
         server.pluginManager.registerEvents(mobStacker, this)
         server.pluginManager.registerEvents(explosionOptimizer, this)
@@ -123,6 +127,7 @@ open class FixLag : JavaPlugin() {
         if (configManager.isDolphinDrowningFixEnabled) server.pluginManager.registerEvents(dolphinDrowningFix, this)
         if (configManager.isTraderLlamaDespawnFixEnabled) server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
         if (configManager.isPigTeleportExploitFixEnabled) server.pluginManager.registerEvents(pigTeleportExploitFix, this)
+        if (configManager.isTntRaycastFixEnabled) server.pluginManager.registerEvents(tntRaycastFix, this)
         messageManager.logInfo("log_startup_events_registered")
 
         taskManager.startDeletionTask()
@@ -136,6 +141,9 @@ open class FixLag : JavaPlugin() {
         }
         if (configManager.isXpOrbMergerEnabled) {
             experienceOrbMerger.runTaskTimer(this, 20L * 5, configManager.xpOrbMergerCheckIntervalTicks.toLong())
+        }
+        if (configManager.isTntRaycastFixEnabled) {
+            tntRaycastFix.runTaskTimer(this, 1L, 1L)
         }
         updateChecker.startUpdateCheckTask()
         deletedItemsManager.loadItemsFromDisk()
@@ -161,6 +169,7 @@ open class FixLag : JavaPlugin() {
                 if (configManager.isDolphinDrowningFixEnabled) put("Dolphin Drowning Fix", 1)
                 if (configManager.isTraderLlamaDespawnFixEnabled) put("Trader Llama Despawn Fix", 1)
                 if (configManager.isPigTeleportExploitFixEnabled) put("Pig Teleport Exploit Fix", 1)
+                if (configManager.isTntRaycastFixEnabled) put("TNT Raycast Fix", 1)
             }
         })
 

@@ -231,4 +231,13 @@ bug-fixes:
     # Max blocks a saddled pig carrying a player may move in one tick. Keep this above a
     # pig's normal (even carrot-boosted) speed to avoid false positives; lower it if needed.
     max-distance-per-tick: 1.0
+  # MC-263882: TNT runs a fall-damage raycast every tick even though it's immune to fall
+  # damage. That raycast happens inside vanilla's internal movement code and can't be skipped
+  # from a plugin, so this instead caps primed TNT velocity to bound how far (and how
+  # expensive) the wasted raycast can get each tick. This is a mitigation, not a full fix.
+  tnt-raycast:
+    enabled: true
+    # Max blocks a primed TNT entity may move per tick, checked once per tick. Raise this if
+    # it interferes with TNT cannon builds.
+    max-velocity-per-tick: 10.0
 
