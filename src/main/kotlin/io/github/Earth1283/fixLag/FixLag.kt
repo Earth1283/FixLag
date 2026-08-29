@@ -120,9 +120,9 @@ open class FixLag : JavaPlugin() {
         server.pluginManager.registerEvents(armorStandOptimizer, this)
         server.pluginManager.registerEvents(hopperOptimizer, this)
         server.pluginManager.registerEvents(panicModeManager, this)
-        server.pluginManager.registerEvents(dolphinDrowningFix, this)
-        server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
-        server.pluginManager.registerEvents(pigTeleportExploitFix, this)
+        if (configManager.isDolphinDrowningFixEnabled) server.pluginManager.registerEvents(dolphinDrowningFix, this)
+        if (configManager.isTraderLlamaDespawnFixEnabled) server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
+        if (configManager.isPigTeleportExploitFixEnabled) server.pluginManager.registerEvents(pigTeleportExploitFix, this)
         messageManager.logInfo("log_startup_events_registered")
 
         taskManager.startDeletionTask()
