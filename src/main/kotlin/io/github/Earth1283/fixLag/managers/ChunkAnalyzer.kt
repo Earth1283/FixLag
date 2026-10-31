@@ -1,43 +1,37 @@
 package io.github.Earth1283.fixLag.managers
 
-import org.bukkit.Bukkit
+import io.github.Earth1283.fixLag.utils.EntityScan
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.PriorityQueue
 
 class ChunkAnalyzer(private val plugin: JavaPlugin, private val messageManager: MessageManager) {
+    private data class Key(val world: String, val x: Int, val z: Int)
+    private val scan = EntityScan(plugin)
 
     fun analyzeChunks(sender: CommandSender) {
+        if (scan.isRunning) {
+            sender.sendMessage("§eChunk analysis is already in progress.")
+            return
+        }
         sender.sendMessage(messageManager.getMessage("chunk_analysis_started"))
-
-        // Entity access (chunk.entities) must happen on the main thread.
-        // Defer one tick so the "started" message renders first, then collect and display.
-        Bukkit.getScheduler().runTask(plugin, Runnable {
-            val results = mutableListOf<Pair<ChunkSnapshotWrapper, Int>>()
-            for (world in Bukkit.getWorlds()) {
-                for (chunk in world.loadedChunks) {
-                    val count = chunk.entities.size
-                    if (count > 0) {
-                        results.add(Pair(ChunkSnapshotWrapper(world.name, chunk.x, chunk.z), count))
-                    }
-                }
+        val counts = mutableMapOf<Key, Int>()
+        scan.start(visit = { entity ->
+            val loc = entity.location
+            val key = Key(entity.world.name, loc.blockX shr 4, loc.blockZ shr 4)
+            counts[key] = counts.getOrDefault(key, 0) + 1
+        }, complete = {
+            val top = PriorityQueue<Map.Entry<Key, Int>>(compareBy { it.value })
+            for (entry in counts.entries) {
+                top.offer(entry)
+                if (top.size > 10) top.poll()
             }
-
-            val sortedChunks = results.sortedByDescending { it.second }.take(10)
-
             sender.sendMessage(messageManager.getMessage("chunk_analysis_header"))
-            if (sortedChunks.isEmpty()) {
-                sender.sendMessage(messageManager.getMessage("chunk_analysis_no_data"))
-            } else {
-                for ((chunk, count) in sortedChunks) {
-                    sender.sendMessage(messageManager.getMessage("chunk_analysis_entry",
-                        "<world>", chunk.worldName,
-                        "<x>", chunk.x.toString(),
-                        "<z>", chunk.z.toString(),
-                        "<count>", count.toString()))
-                }
+            if (top.isEmpty()) sender.sendMessage(messageManager.getMessage("chunk_analysis_no_data"))
+            else for ((chunk, count) in top.sortedByDescending { it.value }) {
+                sender.sendMessage(messageManager.getMessage("chunk_analysis_entry",
+                    "<world>", chunk.world, "<x>", chunk.x.toString(), "<z>", chunk.z.toString(), "<count>", count.toString()))
             }
         })
     }
-
-    private data class ChunkSnapshotWrapper(val worldName: String, val x: Int, val z: Int)
 }

@@ -191,13 +191,12 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
 
     fun loadConfig() {
         plugin.saveDefaultConfig()
-        var config = plugin.config
+        plugin.reloadConfig()
+        val config = plugin.config
         config.options().copyDefaults(true)
         plugin.saveConfig()
-        plugin.reloadConfig()
-        config = plugin.config
 
-        entitiesToDelete = config.getStringList("entities-to-delete").toSet()
+        entitiesToDelete = config.getStringList("entities-to-delete").map { it.uppercase() }.toSet()
         isIgnoreCustomNamedItems = config.getBoolean("ignore-custom-named-items", true)
         deletionIntervalTicks = config.getLong("deletion-interval-seconds", 60) * 20L
         isEnableWarning = config.getBoolean("enable-warning", true)
@@ -313,10 +312,26 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
     }
 
     private fun org.bukkit.configuration.file.FileConfiguration.getSafeDouble(path: String, default: Double): Double {
-        return if (this.contains(path)) this.getDouble(path) else default
+        return if (this.contains(path)) this.getDouble(path).takeIf { it.isFinite() } ?: default else default
     }
 
     private fun validateConfigValues() {
+        fun interval(value: Long, feature: String, seconds: Long): Long {
+            if (value > 0) return value
+            messageManager.logWarn("log_config_invalid_interval", "<feature>", feature)
+            return seconds * 20L
+        }
+        panicModeCheckIntervalTicks = interval(panicModeCheckIntervalTicks, "panic-mode", 15)
+        xpOrbMergerCheckIntervalTicks = interval(xpOrbMergerCheckIntervalTicks, "xp-orb-merger", 20)
+        collisionOptimizerCheckIntervalTicks = interval(collisionOptimizerCheckIntervalTicks, "collision-optimizer", 30)
+        dynamicDistanceCheckIntervalTicks = interval(dynamicDistanceCheckIntervalTicks, "dynamic-distance", 60)
+        lagNotificationsCheckIntervalTicks = interval(lagNotificationsCheckIntervalTicks, "lag-notifications", 15)
+        if (smartClearCooldownTicks < 0) smartClearCooldownTicks = 300 * 20L
+        if (lagNotificationsCooldownTicks < 0) lagNotificationsCooldownTicks = 300 * 20L
+        dynamicDistanceMinView = dynamicDistanceMinView.coerceIn(2, 32)
+        dynamicDistanceMaxView = dynamicDistanceMaxView.coerceIn(2, 32)
+        dynamicDistanceMinSim = dynamicDistanceMinSim.coerceIn(2, 32)
+        dynamicDistanceMaxSim = dynamicDistanceMaxSim.coerceIn(2, 32)
         if (deletionIntervalTicks <= 0) {
             messageManager.logWarn("log_config_invalid_deletion_interval")
             deletionIntervalTicks = 60 * 20L
@@ -349,6 +364,7 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         }
         if (panicModeRecoverTps <= panicModeTpsThreshold) {
             messageManager.logWarn("log_config_panic_recover_lte_threshold")
+            panicModeTpsThreshold = panicModeTpsThreshold.coerceAtMost(18.0)
             panicModeRecoverTps = panicModeTpsThreshold + 2.0
         }
         if (spawnerOptimizerTpsThreshold <= 0 || spawnerOptimizerTpsThreshold > 20) {
@@ -373,12 +389,12 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         }
 
         // Dynamic distance min < max invariants
-        if (dynamicDistanceMinView >= dynamicDistanceMaxView) {
+        if (dynamicDistanceMinView > dynamicDistanceMaxView) {
             messageManager.logWarn("log_config_invalid_distance_range", "<type>", "view")
             dynamicDistanceMinView = 4
             dynamicDistanceMaxView = 10
         }
-        if (dynamicDistanceMinSim >= dynamicDistanceMaxSim) {
+        if (dynamicDistanceMinSim > dynamicDistanceMaxSim) {
             messageManager.logWarn("log_config_invalid_distance_range", "<type>", "simulation")
             dynamicDistanceMinSim = 4
             dynamicDistanceMaxSim = 10
@@ -396,8 +412,9 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
         }
 
         // Misc range checks
-        if (hopperOptimizerRecoverTpsThreshold <= hopperOptimizerTpsThreshold) {
+        if (hopperOptimizerRecoverTpsThreshold <= hopperOptimizerTpsThreshold || hopperOptimizerRecoverTpsThreshold > 20) {
             messageManager.logWarn("log_config_invalid_hopper_recover_threshold")
+            hopperOptimizerTpsThreshold = hopperOptimizerTpsThreshold.coerceAtMost(19.0)
             hopperOptimizerRecoverTpsThreshold = hopperOptimizerTpsThreshold + 1.0
         }
         if (hopperOptimizerCancelChance < 0 || hopperOptimizerCancelChance > 1.0) {
@@ -420,6 +437,7 @@ class ConfigManager(private val plugin: JavaPlugin, private val messageManager: 
             messageManager.logWarn("log_config_invalid_mob_stacking_radius")
             mobStackingRadius = 10
         }
+        mobStackingRadius = mobStackingRadius.coerceAtMost(32)
         if (mobStackingMaxStackSize <= 0) {
             messageManager.logWarn("log_config_invalid_mob_stacking_max")
             mobStackingMaxStackSize = 50

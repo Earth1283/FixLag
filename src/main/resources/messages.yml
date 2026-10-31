@@ -6,6 +6,7 @@ entity_clear_broadcast: "<green>Cleaned up <dark_green>%fixlag_count% <green>unn
 entity_clear_warning: "<yellow>Entities will be cleared in <gold>%fixlag_time% <yellow>seconds."
 retrieve_command_in_cooldown: "<red>You can't use this command while the items are being collected."
 retrieve_command_no_items: "<red>There are no items to retrieve."
+retrieve_inventory_full: "<red>Your inventory is full. The item remains available for recovery."
 permission_denied: "<red>You do not have permission to use this command."
 gc_info_header: "<yellow>--- JVM Memory & GC Info ---"
 server_info_header: "<yellow>--- Server Information ---"

@@ -74,11 +74,7 @@ class CommandManager(
                     if (plugin is FixLag) {
                         plugin.configManager.loadConfig()
                         plugin.messageManager.loadMessages()
-                        plugin.taskManager.startDeletionTask()
-                        plugin.taskManager.startSmartClearTask()
-                        plugin.taskManager.startDynamicDistanceTask()
-                        plugin.taskManager.startLagNotifierTask()
-                        plugin.updateChecker.startUpdateCheckTask()
+                        plugin.restartTasks()
                     }
                     sender.sendMessage(messageManager.getMessage("command_reload_success"))
                     return true

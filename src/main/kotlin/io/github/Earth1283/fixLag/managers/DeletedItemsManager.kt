@@ -9,213 +9,216 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.inventory.ClickType
+import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitTask
 import java.io.File
-import java.util.*
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.Base64
+import java.util.UUID
 
-class DeletedItemsManager(private val plugin: JavaPlugin) : Listener {
-
-    private val configManager: ConfigManager = (plugin as FixLag).configManager
+class DeletedItemsManager(
+    private val plugin: JavaPlugin,
+    private val configManager: ConfigManager = (plugin as FixLag).configManager,
     private val messageManager: MessageManager = (plugin as FixLag).messageManager
-
-    private class StoredItem(val item: ItemStack, val addedAt: Long)
-
-    private val deletedItems = ConcurrentLinkedQueue<StoredItem>()
-    private val playerPages = mutableMapOf<UUID, Int>()
-    private var isCleanupScheduled = false
-
-    val deletedItemCount: Int get() = deletedItems.size
-
-    companion object {
-        private const val CHEST_SIZE = 54
-        private const val CHEST_TITLE = "Recovered Items"
-        private const val ITEMS_PER_PAGE = 45
-        private const val PERSISTENCE_FILE = "deleted_items.yml"
+) : Listener {
+    private class StoredItem(val item: ItemStack, val addedAt: Long, val expiresAt: Long) {
+        var encoded: String? = null
     }
+
+    private class RecoveryHolder(val owner: DeletedItemsManager, val page: Int, val ids: List<UUID>) : InventoryHolder {
+        lateinit var contents: Inventory
+        override fun getInventory(): Inventory = contents
+    }
+
+    private val deletedItems = linkedMapOf<UUID, StoredItem>()
+    private val viewers = mutableSetOf<UUID>()
+    private var cleanupTask: BukkitTask? = null
+    private var refreshTask: BukkitTask? = null
+    private val storage = RecoveryStorage(File(plugin.dataFolder, "deleted_items.yml"), plugin.logger)
+    val deletedItemCount: Int get() = deletedItems.size
 
     fun addDeletedItems(items: List<ItemStack>) {
         if (items.isEmpty()) return
         val now = System.currentTimeMillis()
-        val maxItems = if (configManager.isDeletedItemsPersistenceEnabled) configManager.deletedItemsPersistenceMaxItems else Int.MAX_VALUE
-        val available = (maxItems - deletedItems.size).coerceAtLeast(0)
-        items.take(available).forEach { deletedItems.offer(StoredItem(it, now)) }
-
-        if (!isCleanupScheduled) {
-            isCleanupScheduled = true
-            startCleanupTimer()
+        for (item in items) {
+            // Bound memory as well as the persistence file; discard the oldest entries first.
+            while (deletedItems.size >= configManager.deletedItemsPersistenceMaxItems) {
+                deletedItems.remove(deletedItems.keys.first())
+            }
+            deletedItems[UUID.randomUUID()] = StoredItem(item.clone(), now,
+                now + configManager.deletedItemsPersistenceCleanupSeconds * 1000L)
         }
-        if (configManager.isDeletedItemsPersistenceEnabled) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable { saveItemsToDisk() })
-        }
-        updateAllOpenViews()
+        scheduleCleanup()
+        saveItemsToDisk()
+        refreshViews()
     }
 
     fun openChestGUI(player: Player) {
+        if (!player.hasPermission("fixlag.retrieve")) {
+            player.sendMessage(messageManager.getMessage("permission_denied"))
+            return
+        }
         if (deletedItems.isEmpty()) {
             player.sendMessage(messageManager.getMessage("retrieve_command_no_items"))
             return
         }
-        playerPages[player.uniqueId] = 0
         openPage(player, 0)
     }
 
-    private fun openPage(player: Player, page: Int) {
-        val inv = Bukkit.createInventory(null, CHEST_SIZE, Component.text("$CHEST_TITLE (Page ${page + 1})"))
-
-        val allItems = ArrayList(deletedItems)
-        val startIndex = page * ITEMS_PER_PAGE
-        val endIndex = (startIndex + ITEMS_PER_PAGE).coerceAtMost(allItems.size)
-
-        if (startIndex >= allItems.size && page > 0) {
-            openPage(player, page - 1)
-            return
-        }
-
-        for (i in startIndex until endIndex) {
-            inv.addItem(allItems[i].item)
-        }
-
-        if (page > 0) {
-            val prev = ItemStack(Material.ARROW)
-            prev.itemMeta = prev.itemMeta?.apply { displayName(Component.text("Previous Page")) }
-            inv.setItem(45, prev)
-        }
-
-        if (endIndex < allItems.size) {
-            val next = ItemStack(Material.ARROW)
-            next.itemMeta = next.itemMeta?.apply { displayName(Component.text("Next Page")) }
-            inv.setItem(53, next)
-        }
-
-        player.openInventory(inv)
+    private fun openPage(player: Player, requestedPage: Int) {
+        val entries = deletedItems.entries.toList()
+        val page = requestedPage.coerceIn(0, ((entries.size - 1) / 45).coerceAtLeast(0))
+        val displayed = entries.drop(page * 45).take(45)
+        val holder = RecoveryHolder(this, page, displayed.map { it.key })
+        val inventory = Bukkit.createInventory(holder, 54, Component.text("Recovered Items (Page ${page + 1})"))
+        holder.contents = inventory
+        displayed.forEachIndexed { slot, entry -> inventory.setItem(slot, entry.value.item.clone()) }
+        if (page > 0) inventory.setItem(45, navigation("Previous Page"))
+        if ((page + 1) * 45 < entries.size) inventory.setItem(53, navigation("Next Page"))
+        player.openInventory(inventory)
+        viewers.add(player.uniqueId)
     }
 
-    private fun updateAllOpenViews() {
-        for (player in Bukkit.getOnlinePlayers()) {
-            if (player.openInventory.title().toString().contains(CHEST_TITLE)) {
-                val page = playerPages.getOrDefault(player.uniqueId, 0)
-                openPage(player, page)
+    private fun navigation(name: String) = ItemStack(Material.ARROW).apply {
+        itemMeta = itemMeta?.apply { displayName(Component.text(name)) }
+    }
+
+    private fun holder(inventory: Inventory): RecoveryHolder? =
+        (inventory.holder as? RecoveryHolder)?.takeIf { it.owner === this }
+
+    // InventoryClickEvent forbids opening/replacing its inventory during the event itself.
+    private fun refreshViews() {
+        if (refreshTask != null || viewers.isEmpty()) return
+        refreshTask = Bukkit.getScheduler().runTask(plugin, Runnable {
+            refreshTask = null
+            for (id in viewers.toList()) {
+                val player = Bukkit.getPlayer(id)
+                val current = player?.let { holder(it.openInventory.topInventory) }
+                if (player == null || current == null) {
+                    viewers.remove(id)
+                } else if (deletedItems.isEmpty() || !player.hasPermission("fixlag.retrieve")) {
+                    player.closeInventory()
+                } else {
+                    openPage(player, current.page)
+                }
             }
-        }
+        })
     }
 
     @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
-        if (!event.view.title().toString().contains(CHEST_TITLE)) return
+        val holder = holder(event.view.topInventory) ?: return
         event.isCancelled = true
-
-        val clicked = event.currentItem ?: return
-        if (clicked.type == Material.AIR) return
-
-        val player = event.whoClicked as Player
-        val page = playerPages.getOrDefault(player.uniqueId, 0)
-
-        if (clicked.type == Material.ARROW) {
-            val meta = clicked.itemMeta
-            if (meta?.displayName() != null) {
-                val slot = event.slot
-                if (slot == 45) {
-                    if (page > 0) {
-                        playerPages[player.uniqueId] = page - 1
-                        openPage(player, page - 1)
-                    }
-                } else if (slot == 53) {
-                    playerPages[player.uniqueId] = page + 1
-                    openPage(player, page + 1)
+        val player = event.whoClicked as? Player ?: return
+        if (!player.hasPermission("fixlag.retrieve")) return
+        val slot = event.rawSlot
+        if (slot !in 0 until 54 || event.click !in setOf(ClickType.LEFT, ClickType.RIGHT)) return
+        if (slot == 45 || slot == 53) {
+            if (event.currentItem == null) return
+            val nextPage = holder.page + if (slot == 45) -1 else 1
+            Bukkit.getScheduler().runTask(plugin, Runnable {
+                if (this.holder(player.openInventory.topInventory) === holder && player.hasPermission("fixlag.retrieve")) {
+                    openPage(player, nextPage)
                 }
-            }
+            })
             return
         }
-
-        if (event.slot < 45) {
-            if (event.isLeftClick || event.isRightClick) {
-                val allItems = ArrayList(deletedItems)
-                val itemIndex = page * ITEMS_PER_PAGE + event.slot
-                if (itemIndex >= allItems.size) return
-
-                val storedItem = allItems[itemIndex]
-                player.inventory.addItem(storedItem.item.clone())
-                deletedItems.remove(storedItem)
-                if (configManager.isDeletedItemsPersistenceEnabled) {
-                    Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable { saveItemsToDisk() })
-                }
-                updateAllOpenViews()
-                player.sendMessage(messageManager.getMessage("retrieve_item_success", "%item%", storedItem.item.type.toString()))
-            }
+        val id = holder.ids.getOrNull(slot) ?: return
+        val stored = deletedItems[id] ?: return
+        val originalAmount = stored.item.amount
+        val remaining = player.inventory.addItem(stored.item.clone()).values.sumOf { it.amount }
+        if (remaining == originalAmount) {
+            player.sendMessage(messageManager.getMessage("retrieve_inventory_full"))
+            return
         }
+        if (remaining == 0) deletedItems.remove(id) else {
+            stored.item.amount = remaining
+            stored.encoded = null
+        }
+        saveItemsToDisk()
+        refreshViews()
+        player.sendMessage(messageManager.getMessage("retrieve_item_success", "%item%", stored.item.type.toString()))
+    }
+
+    @EventHandler
+    fun onInventoryDrag(event: InventoryDragEvent) {
+        if (holder(event.view.topInventory) != null && event.rawSlots.any { it < 54 }) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun onInventoryClose(event: InventoryCloseEvent) {
+        if (holder(event.inventory) != null) viewers.remove(event.player.uniqueId)
     }
 
     fun saveItemsToDisk() {
         if (!configManager.isDeletedItemsPersistenceEnabled) return
-        try {
-            val file = File(plugin.dataFolder, PERSISTENCE_FILE)
-            val config = YamlConfiguration()
-            val snapshot = ArrayList(deletedItems)
-            config.set("count", snapshot.size)
-            for ((i, stored) in snapshot.withIndex()) {
-                config.set("$i.added-at", stored.addedAt)
-                config.set("$i.item", stored.item)
-            }
-            config.save(file)
-        } catch (e: Exception) {
-            plugin.logger.warning("Could not save deleted items: ${e.message}")
+        // Serialize each changed item once, on the server thread. The worker gets immutable data.
+        val snapshot = deletedItems.values.map { stored ->
+            val encoded = stored.encoded ?: Base64.getEncoder().encodeToString(stored.item.serializeAsBytes())
+                .also { stored.encoded = it }
+            RecoveryStorage.Record(stored.addedAt, encoded)
         }
+        storage.save(snapshot)
+    }
+
+    fun onConfigReload() {
+        while (deletedItems.size > configManager.deletedItemsPersistenceMaxItems) {
+            deletedItems.remove(deletedItems.keys.first())
+        }
+        if (configManager.isDeletedItemsPersistenceEnabled) saveItemsToDisk()
+        else storage.save(emptyList())
+        scheduleCleanup()
+        refreshViews()
     }
 
     fun loadItemsFromDisk() {
         if (!configManager.isDeletedItemsPersistenceEnabled) return
-        try {
-            val file = File(plugin.dataFolder, PERSISTENCE_FILE)
-            if (!file.exists()) return
+        val file = File(plugin.dataFolder, "deleted_items.yml")
+        if (!file.exists()) return
+        val yaml = YamlConfiguration.loadConfiguration(file)
+        val now = System.currentTimeMillis()
+        val count = yaml.getInt("count").coerceAtLeast(0)
+        val first = (count - configManager.deletedItemsPersistenceMaxItems).coerceAtLeast(0)
+        for (i in first until count) {
+            val addedAt = yaml.getLong("$i.added-at")
+            if (addedAt <= 0 || now - addedAt >= configManager.deletedItemsPersistenceExpirySeconds * 1000L) continue
+            try {
+                val encoded = yaml.getString("$i.item-bytes")
+                val item = if (encoded != null) ItemStack.deserializeBytes(Base64.getDecoder().decode(encoded))
+                    else yaml.getItemStack("$i.item") ?: continue // Read files from older releases.
+                deletedItems[UUID.randomUUID()] = StoredItem(item, addedAt,
+                    now + configManager.deletedItemsPersistenceCleanupSeconds * 1000L).apply { this.encoded = encoded }
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not restore deleted item $i: ${e.message}")
+            }
+        }
+        scheduleCleanup()
+    }
 
-            val config = YamlConfiguration.loadConfiguration(file)
-            val count = config.getInt("count", 0)
+    private fun scheduleCleanup() {
+        cleanupTask?.cancel()
+        val earliest = deletedItems.values.minOfOrNull { it.expiresAt } ?: return
+        val ticks = ((earliest - System.currentTimeMillis() + 49) / 50).coerceAtLeast(1L)
+        cleanupTask = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            cleanupTask = null
             val now = System.currentTimeMillis()
-            val expiryMs = configManager.deletedItemsPersistenceExpirySeconds * 1000L
-            val maxItems = configManager.deletedItemsPersistenceMaxItems
-            var loaded = 0
-
-            for (i in 0 until count) {
-                if (loaded >= maxItems) break
-                val addedAt = config.getLong("$i.added-at", 0L)
-                if (addedAt <= 0L || (now - addedAt) >= expiryMs) continue
-                val item = config.getItemStack("$i.item") ?: continue
-                deletedItems.offer(StoredItem(item, addedAt))
-                loaded++
-            }
-
-            if (loaded > 0) {
-                plugin.logger.info("Restored $loaded deleted item(s) from disk.")
-                if (!isCleanupScheduled) {
-                    isCleanupScheduled = true
-                    startCleanupTimer()
-                }
-            }
-        } catch (e: Exception) {
-            plugin.logger.warning("Could not load deleted items: ${e.message}")
-        }
+            deletedItems.entries.removeIf { it.value.expiresAt <= now }
+            saveItemsToDisk()
+            refreshViews()
+            scheduleCleanup()
+        }, ticks)
     }
 
-    private fun startCleanupTimer() {
-        val cleanupTicks = configManager.deletedItemsPersistenceCleanupSeconds * 20L
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable { clearDeletedItems() }, cleanupTicks)
-    }
-
-    private fun clearDeletedItems() {
-        for (player in Bukkit.getOnlinePlayers()) {
-            if (player.openInventory.title().toString().contains(CHEST_TITLE)) {
-                player.closeInventory()
-            }
-        }
-        deletedItems.clear()
-        playerPages.clear()
-        isCleanupScheduled = false
-        if (configManager.isDeletedItemsPersistenceEnabled) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
-                File(plugin.dataFolder, PERSISTENCE_FILE).delete()
-            })
-        }
+    fun shutdown() {
+        cleanupTask?.cancel()
+        refreshTask?.cancel()
+        viewers.toList().forEach { Bukkit.getPlayer(it)?.closeInventory() }
+        saveItemsToDisk()
+        storage.close()
     }
 }

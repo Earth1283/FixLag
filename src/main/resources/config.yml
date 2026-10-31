@@ -48,7 +48,8 @@ chunk-entity-limits:
   # Whether to skip tamed entities
   skip-tamed: true
 
-# Villager Lobotomization: Disables AI for villagers that are trapped in a 1x1 space or a minecart.
+# Villager Lobotomization: Disables AI for trapped villagers outside their work hours.
+# AI stays enabled during work hours so trading villagers can restock.
 # This significantly reduces the performance impact of large villager trading halls.
 villager-lobotomization:
   enabled: false
@@ -67,7 +68,8 @@ mob-stacking:
   enabled: false
   radius: 10
   max-stack-size: 50
-  # List of entity types to stack (use uppercase Bukkit EntityType names)
+  # Supported types: ZOMBIE, SKELETON, CREEPER, SPIDER, COW, SHEEP, PIG, CHICKEN.
+  # Only mobs with compatible age, variants, equipment and other supported state are stacked.
   allowed-entities:
     - ZOMBIE
     - SKELETON
@@ -201,7 +203,8 @@ collision-optimizer:
 deleted-items-persistence:
   # Set to false to keep the old in-memory-only behavior (items are lost on restart).
   enabled: true
-  # Maximum number of items to store in the persistence file.
+  # Maximum number of item stacks in memory and in the persistence file.
+  # This memory limit also applies when disk persistence is disabled.
   # Excess items beyond this limit are dropped (oldest first).
   max-stored-items: 500
   # How long (in seconds) a stored item remains eligible for restoration on restart.

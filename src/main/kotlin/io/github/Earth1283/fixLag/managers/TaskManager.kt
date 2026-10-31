@@ -1,10 +1,9 @@
 package io.github.Earth1283.fixLag.managers
 
-import io.github.Earth1283.fixLag.FixLag
-import net.kyori.adventure.text.Component
+import io.github.Earth1283.fixLag.utils.EntityScan
 import org.bukkit.Bukkit
 import org.bukkit.entity.Item
-import org.bukkit.entity.Player
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Trident
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
@@ -25,6 +24,7 @@ class TaskManager(
     private var smartClearTask: BukkitTask? = null
     private var dynamicDistanceTask: BukkitTask? = null
     private var lagNotifierTask: BukkitTask? = null
+    private val deletionScan = EntityScan(plugin)
 
     private var lastDeletionTime = System.currentTimeMillis()
     private var warningSent = false
@@ -67,7 +67,7 @@ class TaskManager(
     fun startDynamicDistanceTask() {
         dynamicDistanceTask?.cancel()
         if (configManager.isDynamicDistanceEnabled) {
-            dynamicDistanceTask = dynamicDistanceManager.runTaskTimer(plugin, 20L * 60, configManager.dynamicDistanceCheckIntervalTicks)
+            dynamicDistanceTask = Bukkit.getScheduler().runTaskTimer(plugin, Runnable { dynamicDistanceManager.run() }, 20L * 60, configManager.dynamicDistanceCheckIntervalTicks)
         }
     }
 
@@ -111,10 +111,32 @@ class TaskManager(
     }
 
     fun deleteAndAnnounce() {
-        val deletedItems = deleteEntities()
-        val deletedCount = deletedItems.size
+        if (deletionScan.isRunning || configManager.entitiesToDelete.isEmpty()) return
+        var deletedCount = 0
+        val recovered = mutableListOf<ItemStack>()
+        deletionScan.start(visit = { entity ->
+            if (shouldDeleteEntity(entity)) {
+                when (entity) {
+                    is Item -> recovered.add(entity.itemStack.clone())
+                    is Trident -> recovered.add(entity.itemStack.clone())
+                }
+                entity.remove()
+                deletedCount++
+            }
+        }, afterBatch = {
+            if (recovered.isNotEmpty()) {
+                deletedItemsManager.addDeletedItems(recovered)
+                recovered.clear()
+            }
+        }, complete = {
+            announceDeletion(deletedCount)
+        })
+    }
+
+    private fun announceDeletion(deletedCount: Int) {
+        lastDeletionTime = System.currentTimeMillis()
+        warningSent = false
         if (deletedCount > 0) {
-            deletedItemsManager.addDeletedItems(deletedItems)
 
             if ("ACTION_BAR".equals(configManager.notificationType, ignoreCase = true)) {
                 val broadcastComponent = messageManager.getComponentMessage("entity_clear_broadcast", "%fixlag_count%", deletedCount.toString())
@@ -122,8 +144,7 @@ class TaskManager(
                     player.sendActionBar(broadcastComponent)
                 }
             } else {
-                val broadcastMessage = messageManager.getMessage("entity_clear_broadcast", "%fixlag_count%", deletedCount.toString())
-                Bukkit.getServer().broadcast(Component.text(broadcastMessage))
+                Bukkit.getServer().broadcast(messageManager.getComponentMessage("entity_clear_broadcast", "%fixlag_count%", deletedCount.toString()))
             }
 
             if (configManager.isLogMemoryStats) {
@@ -133,36 +154,23 @@ class TaskManager(
         }
     }
 
-    private fun deleteEntities(): List<ItemStack> {
-        val deletedItems = mutableListOf<ItemStack>()
-        val entitiesToDelete = configManager.entitiesToDelete
-        for (world in Bukkit.getWorlds()) {
-            for (entity in world.entities) {
-                if (!entity.isValid) continue
-
-                val shouldDelete = entitiesToDelete.contains(entity.type.name)
-                val isProjectile = entity is org.bukkit.entity.AbstractArrow
-
-                if (shouldDelete || isProjectile) {
-                    if (configManager.isIgnoreCustomNamedItems && entity.customName != null) {
-                        continue
-                    }
-
-                    if (entity is Trident) {
-                        if (entity.itemStack.enchantments.isEmpty()) {
-                            deletedItems.add(entity.itemStack)
-                        } else {
-                            continue
-                        }
-                    }
-
-                    if (entity is Item) {
-                        deletedItems.add(entity.itemStack)
-                    }
-                    entity.remove()
-                }
-            }
+    internal fun shouldDeleteEntity(entity: Entity): Boolean {
+        if (!entity.isValid || entity.type.name !in configManager.entitiesToDelete) return false
+        val stack = when (entity) {
+            is Item -> entity.itemStack
+            is Trident -> entity.itemStack
+            else -> null
         }
-        return deletedItems
+        if (configManager.isIgnoreCustomNamedItems &&
+            (entity.customName != null || stack?.itemMeta?.hasDisplayName() == true)) return false
+        return entity !is Trident || stack?.itemMeta?.hasEnchants() != true
+    }
+
+    fun stop() {
+        deletionTask?.cancel()
+        smartClearTask?.cancel()
+        dynamicDistanceTask?.cancel()
+        lagNotifierTask?.cancel()
+        deletionScan.stop()
     }
 }

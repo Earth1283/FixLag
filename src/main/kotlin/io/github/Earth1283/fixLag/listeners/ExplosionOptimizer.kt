@@ -14,6 +14,7 @@ class ExplosionOptimizer(plugin: FixLag) : Listener {
 
     private val config = plugin.configManager
     private val messageManager = plugin.messageManager
+    private var lastLogTime: Long? = null
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onEntityExplode(event: EntityExplodeEvent) {
@@ -32,10 +33,14 @@ class ExplosionOptimizer(plugin: FixLag) : Listener {
         if (tps > config.explosionOptimizationTpsThreshold) return
 
         val maxBlocks = config.explosionOptimizationMaxBlocksLimit
-        if (maxBlocks > 0 && blockList.size > maxBlocks) {
+        val trimmed = maxBlocks > 0 && blockList.size > maxBlocks
+        if (trimmed) {
             blockList.subList(maxBlocks, blockList.size).clear()
         }
 
+        val now = System.nanoTime()
+        if ((!trimmed && !config.isExplosionOptimizationDisableDrops) || lastLogTime?.let { now - it < 30_000_000_000L } == true) return
+        lastLogTime = now
         messageManager.logInfo("log_explosion_optimized",
                 "<world>", location.world?.name ?: "unknown",
                 "<x>", location.blockX.toString(),

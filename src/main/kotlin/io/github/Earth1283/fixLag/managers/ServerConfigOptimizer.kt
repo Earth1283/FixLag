@@ -150,7 +150,8 @@ class ServerConfigOptimizer(private val plugin: JavaPlugin, private val messageM
             val currVal = current.toDouble()
             val optVal = optimized.toDouble()
 
-            val lowerIsBetter = !key.contains("merge-radius") && !key.contains("ticks-per") && !key.contains("tab-spam-limit")
+            val lowerIsBetter = !key.contains("merge-radius") && !key.contains("ticks-per") &&
+                !key.startsWith("tick-rates.") && !key.endsWith("mob-spawner-tick-rate") && !key.contains("tab-spam-limit")
 
             if (lowerIsBetter) {
                 if (currVal > optVal) {

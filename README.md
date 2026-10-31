@@ -48,3 +48,7 @@ The project is built using Kotlin 1.9.22 (targeting Java 21) and the Gradle wrap
 ./gradlew build
 ```
 The resulting JAR will be located in `build/libs/`.
+
+Entity cleanup, collision adjustment, panic mode, villager optimization, XP merging, and chunk analysis process loaded entities in batches across ticks. A scan visits at most 128 entities or four chunks per tick, with a 2 ms cooperative time budget; a single Bukkit API call can exceed that budget. Overlapping runs of the same scan are skipped. Explosion optimization logs at most once per 30 seconds.
+
+Recovery uses individual stack entries with permission checks, preserves items that do not fit in the player's inventory, and keeps at most `deleted-items-persistence.max-stored-items` stacks in memory. Persistence writes are serialized and atomically replaced; existing recovery files are migrated when read. Reload applies feature toggles and intervals without duplicating tasks. Shutdown restores awareness and collisions changed by the plugin and flushes the final recovery save.

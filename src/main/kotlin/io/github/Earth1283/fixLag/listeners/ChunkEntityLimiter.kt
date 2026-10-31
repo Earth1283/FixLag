@@ -35,7 +35,7 @@ class ChunkEntityLimiter(private val plugin: FixLag, private val config: ConfigM
             
             var count = 0
             for (e in chunk.entities) {
-                if (e.type == type) {
+                if (e.type == type && e.isValid && !e.isDead) {
                     count++
                 }
             }

@@ -1,65 +1,65 @@
 package io.github.Earth1283.fixLag.listeners
 
-import be.seeseemelk.mockbukkit.MockBukkit
-import be.seeseemelk.mockbukkit.ServerMock
-import io.github.Earth1283.fixLag.FixLag
-import io.github.Earth1283.fixLag.managers.ConfigManager
+import io.github.Earth1283.fixLag.TestFixture
+import be.seeseemelk.mockbukkit.persistence.PersistentDataContainerMock
+import org.bukkit.DyeColor
 import org.bukkit.Location
-import org.bukkit.entity.EntityType
-import org.bukkit.entity.Zombie
+import org.bukkit.World
+import org.bukkit.entity.*
 import org.bukkit.event.entity.CreatureSpawnEvent
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import org.bukkit.persistence.PersistentDataContainer
+import org.junit.jupiter.api.Test
+import org.mockito.Mockito.*
+import java.util.UUID
+import kotlin.test.*
 
-class MobStackerTest {
-
-    private lateinit var server: ServerMock
-    private lateinit var plugin: FixLag
-    private lateinit var configManager: ConfigManager
-    private lateinit var mobStacker: MobStacker
-
-    @BeforeTest
-    fun setUp() {
-        server = MockBukkit.mock()
-        plugin = MockBukkit.load(FixLag::class.java)
-        configManager = mock(ConfigManager::class.java)
-        mobStacker = MobStacker(plugin, configManager)
-    }
-
-    @AfterTest
-    fun tearDown() {
-        MockBukkit.unmock()
+class MobStackerTest : TestFixture() {
+    @Test
+    fun `matching mobs stack without unimplemented MockBukkit entity creation`() {
+        configure("mob-stacking.enabled", true)
+        val world = mock(World::class.java)
+        val location = Location(world, 0.0, 64.0, 0.0)
+        fun zombie(): Zombie = mock(Zombie::class.java).also { mob ->
+            `when`(mob.type).thenReturn(EntityType.ZOMBIE)
+            `when`(mob.isValid).thenReturn(true)
+            `when`(mob.hasAI()).thenReturn(true)
+            `when`(mob.isAware).thenReturn(true)
+            `when`(mob.location).thenReturn(location)
+            `when`(mob.uniqueId).thenReturn(UUID.randomUUID())
+            `when`(mob.persistentDataContainer).thenReturn(PersistentDataContainerMock())
+        }
+        val first = zombie()
+        val second = zombie()
+        `when`(world.getNearbyEntities(location, 10.0, 10.0, 10.0)).thenReturn(listOf(first))
+        val event = CreatureSpawnEvent(second, CreatureSpawnEvent.SpawnReason.NATURAL)
+        MobStacker(plugin, config).onCreatureSpawn(event)
+        assertTrue(event.isCancelled)
+        verify(first).setCustomName(anyString())
     }
 
     @Test
-    fun testMobStackingEnabled() {
-        `when`(configManager.isMobStackingEnabled).thenReturn(true)
-        `when`(configManager.mobStackingAllowedEntities).thenReturn(setOf("ZOMBIE"))
-        `when`(configManager.mobStackingRadius).thenReturn(10)
-        `when`(configManager.mobStackingMaxStackSize).thenReturn(5)
-        `when`(configManager.mobStackingNameFormat).thenReturn("x%count%")
+    fun `sheep color and shearing state are preserved by compatibility checks`() {
+        val first = mock(Sheep::class.java)
+        val second = mock(Sheep::class.java)
+        `when`(first.type).thenReturn(EntityType.SHEEP)
+        `when`(second.type).thenReturn(EntityType.SHEEP)
+        `when`(first.color).thenReturn(DyeColor.WHITE)
+        `when`(second.color).thenReturn(DyeColor.RED)
+        val stacker = MobStacker(plugin, config)
+        assertFalse(stacker.compatible(first, second))
+        `when`(second.color).thenReturn(DyeColor.WHITE)
+        assertTrue(stacker.compatible(first, second))
+        `when`(second.isSheared).thenReturn(true)
+        assertFalse(stacker.compatible(first, second))
+    }
 
-        val world = server.addSimpleWorld("world")
-        val loc = Location(world, 0.0, 0.0, 0.0)
-
-        // Spawn first zombie
-        val z1 = world.spawn(loc, Zombie::class.java)
-        
-        // We create a second zombie to spawn
-        val z2 = world.createEntity(loc, Zombie::class.java)
-        
-        val event = CreatureSpawnEvent(z2, CreatureSpawnEvent.SpawnReason.NATURAL)
-        
-        // Run logic
-        mobStacker.onCreatureSpawn(event)
-        
-        // Verification:
-        assertTrue(event.isCancelled, "Event should be cancelled due to stacking")
-        assertNotNull(z1.customName, "Stacked entity should have a custom name")
+    @Test
+    fun `baby and adult zombies never share a stack`() {
+        val first = mock(Zombie::class.java)
+        val second = mock(Zombie::class.java)
+        `when`(first.type).thenReturn(EntityType.ZOMBIE)
+        `when`(second.type).thenReturn(EntityType.ZOMBIE)
+        `when`(second.isBaby).thenReturn(true)
+        assertFalse(MobStacker(plugin, config).compatible(first, second))
     }
 }

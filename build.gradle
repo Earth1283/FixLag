@@ -35,6 +35,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    def skippedTests = 0L
+    afterSuite { descriptor, result ->
+        if (descriptor.parent == null) skippedTests = result.skippedTestCount
+    }
+    doLast {
+        if (skippedTests > 0) throw new GradleException("${skippedTests} test(s) were skipped; regression checks must execute.")
+    }
 }
 
 def targetJavaVersion = 21
@@ -71,6 +78,10 @@ processResources {
 }
 
 tasks {
+    jar {
+        archiveClassifier.set('plain')
+    }
+
     runServer {
         minecraftVersion("1.21")
     }

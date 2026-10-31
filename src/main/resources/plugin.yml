@@ -47,7 +47,6 @@ permissions:
 commands:
   fixlag:
     description: Manually triggers the entity deletion.
-    permission: fixlag.command
   gcinfo:
     description: Displays JVM memory and Garbage Collection information.
     permission: fixlag.gcinfo

@@ -1,87 +1,87 @@
 package io.github.Earth1283.fixLag.managers
 
 import io.github.Earth1283.fixLag.FixLag
+import io.github.Earth1283.fixLag.utils.EntityScan
 import org.bukkit.Bukkit
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Tameable
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.world.ChunkUnloadEvent
 import org.bukkit.scheduler.BukkitRunnable
-import java.util.*
+import java.util.UUID
 
 class PanicModeManager(private val plugin: FixLag) : BukkitRunnable(), Listener {
-
-    private val config: ConfigManager = plugin.configManager
-    private val messageManager: MessageManager = plugin.messageManager
-    private var isPanicModeActive = false
+    private val config = plugin.configManager
+    private val scan = EntityScan(plugin)
     private val frozenEntities = mutableSetOf<UUID>()
-
-    val isPanicActive: Boolean get() = isPanicModeActive
+    var isPanicActive = false
+        private set
     val frozenMobCount: Int get() = frozenEntities.size
 
     override fun run() {
-        if (!config.isPanicModeEnabled) return
-
-        val tps = Bukkit.getServer().tps[0]
-
-        if (!isPanicModeActive && tps < config.panicModeTpsThreshold) {
-            activatePanicMode()
-        } else if (isPanicModeActive && tps >= config.panicModeRecoverTps) {
-            deactivatePanicMode()
+        if (!config.isPanicModeEnabled) {
+            restoreAll()
+            return
         }
-    }
-
-    private fun activatePanicMode() {
-        isPanicModeActive = true
-        var frozenCount = 0
-
-        for (world in Bukkit.getWorlds()) {
-            for (entity in world.livingEntities) {
-                if (entity is Mob) {
-                    if (entity.getCustomName() != null) continue
-                    if (entity is Tameable && entity.isTamed) continue
-
-                    if (entity.isAware) {
+        val tps = Bukkit.getServer().tps[0]
+        val active = if (isPanicActive) tps < config.panicModeRecoverTps else tps < config.panicModeTpsThreshold
+        val changed = active != isPanicActive
+        if (changed) {
+            scan.stop()
+            isPanicActive = active
+        }
+        if (!active && frozenEntities.isEmpty()) return
+        var changedCount = 0
+        if (!active) {
+            val ids = frozenEntities.toList()
+            scan.startIds(ids, { entity ->
+                if (frozenEntities.remove(entity.uniqueId) && entity is Mob) {
+                    entity.isAware = true
+                    changedCount++
+                }
+            }, {
+                frozenEntities.removeAll(ids.toSet())
+                if (changed) plugin.messageManager.logInfo("log_panic_deactivated", "<count>", changedCount.toString())
+            })
+            return
+        }
+        scan.start(visit = { entity ->
+            if (entity is Mob) {
+                if (isPanicActive && config.isPanicModeEnabled) {
+                    if (entity.customName == null && !(entity is Tameable && entity.isTamed) && entity.isAware) {
                         entity.isAware = false
                         frozenEntities.add(entity.uniqueId)
-                        frozenCount++
+                        changedCount++
                     }
+                } else if (frozenEntities.remove(entity.uniqueId)) {
+                    entity.isAware = true
+                    changedCount++
                 }
             }
-        }
-
-        messageManager.logWarn("log_panic_activated", "<count>", frozenCount.toString())
+        }, complete = {
+            if (!isPanicActive) frozenEntities.clear()
+            if (changed) {
+                if (active) plugin.messageManager.logWarn("log_panic_activated", "<count>", changedCount.toString())
+                else plugin.messageManager.logInfo("log_panic_deactivated", "<count>", changedCount.toString())
+            }
+        })
     }
 
-    private fun deactivatePanicMode() {
-        isPanicModeActive = false
-        var thawedCount = 0
-
-        for (world in Bukkit.getWorlds()) {
-            for (entity in world.livingEntities) {
-                if (entity.uniqueId in frozenEntities) {
-                    if (entity is Mob) {
-                        entity.isAware = true
-                        thawedCount++
-                    }
-                }
-            }
-        }
-
+    /** Also called on disable, before entities can be saved with awareness disabled. */
+    fun restoreAll() {
+        scan.stop()
+        frozenEntities.forEach { (Bukkit.getEntity(it) as? Mob)?.isAware = true }
         frozenEntities.clear()
-        messageManager.logInfo("log_panic_deactivated", "<count>", thawedCount.toString())
+        isPanicActive = false
     }
 
-    // Restore AI on frozen mobs before the chunk is saved to disk so NoAI doesn't persist.
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onChunkUnload(event: ChunkUnloadEvent) {
-        if (!isPanicModeActive || frozenEntities.isEmpty()) return
+        if (frozenEntities.isEmpty()) return
         for (entity in event.chunk.entities) {
-            if (entity.uniqueId in frozenEntities) {
-                if (entity is Mob) entity.isAware = true
-                frozenEntities.remove(entity.uniqueId)
-            }
+            if (frozenEntities.remove(entity.uniqueId) && entity is Mob) entity.isAware = true
         }
     }
 }

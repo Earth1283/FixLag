@@ -5,6 +5,7 @@ import com.google.gson.JsonArray
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scheduler.BukkitTask
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -16,33 +17,42 @@ class UpdateChecker(
     private val messageManager: MessageManager
 ) {
     private val gson = Gson()
+    private var task: BukkitTask? = null
 
     fun startUpdateCheckTask() {
-        object : BukkitRunnable() {
+        stop()
+        val updateUrl = configManager.updateUrl
+        val currentVersion = plugin.description.version
+        task = object : BukkitRunnable() {
             override fun run() {
                 try {
-                    val latestVersion = getLatestVersion()
-                    if (latestVersion != null) {
-                        if (plugin.description.version != latestVersion) {
-                            messageManager.logInfo("log_update_available", "<version>", latestVersion)
-                            notifyUpdate(latestVersion)
+                    val latestVersion = getLatestVersion(updateUrl)
+                    Bukkit.getScheduler().runTask(plugin, Runnable {
+                        if (latestVersion != null) {
+                            if (currentVersion != latestVersion) {
+                                messageManager.logInfo("log_update_available", "<version>", latestVersion)
+                                notifyUpdate(latestVersion)
+                            } else {
+                                messageManager.logInfo("log_update_uptodate")
+                            }
                         } else {
-                            messageManager.logInfo("log_update_uptodate")
+                            messageManager.logWarn("log_update_check_failed")
                         }
-                    } else {
-                        messageManager.logWarn("log_update_check_failed")
-                    }
-                } catch (e: IOException) {
-                    messageManager.logWarn("log_update_check_error", "<error>", e.message ?: "unknown")
+                    })
+                } catch (e: Exception) {
+                    plugin.logger.warning("Update check failed: ${e.message}")
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 0L, configManager.updateCheckIntervalTicks)
     }
 
     @Throws(IOException::class)
-    private fun getLatestVersion(): String? {
-        val url = URL(configManager.updateUrl)
-        BufferedReader(InputStreamReader(url.openStream())).use { reader ->
+    private fun getLatestVersion(updateUrl: String): String? {
+        val connection = URL(updateUrl).openConnection().apply {
+            connectTimeout = 5000
+            readTimeout = 5000
+        }
+        BufferedReader(InputStreamReader(connection.getInputStream())).use { reader ->
             val versions = gson.fromJson(reader, JsonArray::class.java)
             if (versions != null && !versions.isJsonNull && versions.size() > 0) {
                 val latestVersionElement = versions[0]
@@ -55,6 +65,11 @@ class UpdateChecker(
             }
             return null
         }
+    }
+
+    fun stop() {
+        task?.cancel()
+        task = null
     }
 
     private fun notifyUpdate(latestVersion: String) {

@@ -5,8 +5,13 @@ import io.github.Earth1283.fixLag.listeners.*
 import io.github.Earth1283.fixLag.managers.*
 import io.github.Earth1283.fixLag.utils.Metrics
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitTask
 
 open class FixLag : JavaPlugin() {
+    private val featureTasks = mutableListOf<BukkitTask>()
+    private var metrics: Metrics? = null
+    lateinit var overloadChecker: OverloadChecker
+        private set
 
     lateinit var configManager: ConfigManager
         private set
@@ -96,6 +101,7 @@ open class FixLag : JavaPlugin() {
         updateChecker = UpdateChecker(this, configManager, messageManager)
         commandManager = CommandManager(this, taskManager, performanceMonitor, messageManager, deletedItemsManager, chunkAnalyzer, configOptimizer, redstoneAnalyzer)
         mobStacker = MobStacker(this, configManager)
+        overloadChecker = OverloadChecker(this)
 
         messageManager.logInfo("log_startup_features_header")
         logFeature("Mob Stacking", configManager.isMobStackingEnabled)
@@ -124,32 +130,20 @@ open class FixLag : JavaPlugin() {
         server.pluginManager.registerEvents(armorStandOptimizer, this)
         server.pluginManager.registerEvents(hopperOptimizer, this)
         server.pluginManager.registerEvents(panicModeManager, this)
-        if (configManager.isDolphinDrowningFixEnabled) server.pluginManager.registerEvents(dolphinDrowningFix, this)
-        if (configManager.isTraderLlamaDespawnFixEnabled) server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
-        if (configManager.isPigTeleportExploitFixEnabled) server.pluginManager.registerEvents(pigTeleportExploitFix, this)
-        if (configManager.isTntRaycastFixEnabled) server.pluginManager.registerEvents(tntRaycastFix, this)
+        server.pluginManager.registerEvents(collisionOptimizer, this)
+        server.pluginManager.registerEvents(villagerLobotomizer, this)
+        server.pluginManager.registerEvents(dolphinDrowningFix, this)
+        server.pluginManager.registerEvents(traderLlamaDespawnFix, this)
+        server.pluginManager.registerEvents(pigTeleportExploitFix, this)
+        server.pluginManager.registerEvents(tntRaycastFix, this)
         messageManager.logInfo("log_startup_events_registered")
 
-        taskManager.startDeletionTask()
-        taskManager.startSmartClearTask()
-        taskManager.startDynamicDistanceTask()
-        taskManager.startLagNotifierTask()
-        villagerLobotomizer.runTaskTimer(this, 20L * 30, 20L * 60)
-        collisionOptimizer.runTaskTimer(this, 20L * 20, configManager.collisionOptimizerCheckIntervalTicks.toLong())
-        if (configManager.isPanicModeEnabled) {
-            panicModeManager.runTaskTimer(this, 20L * 15, configManager.panicModeCheckIntervalTicks.toLong())
-        }
-        if (configManager.isXpOrbMergerEnabled) {
-            experienceOrbMerger.runTaskTimer(this, 20L * 5, configManager.xpOrbMergerCheckIntervalTicks.toLong())
-        }
-        if (configManager.isTntRaycastFixEnabled) {
-            tntRaycastFix.runTaskTimer(this, 1L, 1L)
-        }
-        updateChecker.startUpdateCheckTask()
         deletedItemsManager.loadItemsFromDisk()
+        restartTasks()
         messageManager.logInfo("log_startup_tasks_started")
 
         val metrics = Metrics(this, 28156)
+        this.metrics = metrics
 
         metrics.addCustomChart(Metrics.AdvancedPie("enabled_features") {
             buildMap {
@@ -202,9 +196,47 @@ open class FixLag : JavaPlugin() {
         messageManager.logInfo("log_startup_feature_status", "<feature>", name, "<status>", status)
     }
 
+    fun restartTasks() {
+        deletedItemsManager.onConfigReload()
+        featureTasks.forEach { it.cancel() }
+        featureTasks.clear()
+        taskManager.startDeletionTask()
+        taskManager.startSmartClearTask()
+        taskManager.startDynamicDistanceTask()
+        taskManager.startLagNotifierTask()
+        fun repeat(delay: Long, period: Long, work: Runnable) {
+            // Schedule a wrapper: BukkitRunnable instances themselves cannot be rescheduled.
+            featureTasks.add(server.scheduler.runTaskTimer(this, Runnable { work.run() }, delay, period))
+        }
+        if (configManager.isVillagerLobotomizationEnabled) repeat(600L, 1200L, villagerLobotomizer)
+        else villagerLobotomizer.restoreAll()
+        if (configManager.isCollisionOptimizerEnabled) repeat(400L, configManager.collisionOptimizerCheckIntervalTicks, collisionOptimizer)
+        else collisionOptimizer.restoreAll()
+        if (configManager.isPanicModeEnabled) repeat(300L, configManager.panicModeCheckIntervalTicks, panicModeManager)
+        else panicModeManager.restoreAll()
+        experienceOrbMerger.stopScan()
+        if (configManager.isXpOrbMergerEnabled) repeat(100L, configManager.xpOrbMergerCheckIntervalTicks, experienceOrbMerger)
+        if (configManager.isTntRaycastFixEnabled) repeat(1L, 1L, tntRaycastFix)
+        else tntRaycastFix.run()
+        overloadChecker.startChecking(600L, configManager.overloadCheckIntervalTicks)
+        updateChecker.startUpdateCheckTask()
+    }
+
     override fun onDisable() {
-        deletedItemsManager.saveItemsToDisk()
-        messageManager.logInfo("log_plugin_disabled")
-        messageManager.logInfo("log_plugin_goodbye")
+        featureTasks.forEach { it.cancel() }
+        featureTasks.clear()
+        if (::taskManager.isInitialized) taskManager.stop()
+        if (::overloadChecker.isInitialized) overloadChecker.stopChecking()
+        if (::experienceOrbMerger.isInitialized) experienceOrbMerger.stopScan()
+        if (::panicModeManager.isInitialized) panicModeManager.restoreAll()
+        if (::collisionOptimizer.isInitialized) collisionOptimizer.restoreAll()
+        if (::villagerLobotomizer.isInitialized) villagerLobotomizer.restoreAll()
+        if (::deletedItemsManager.isInitialized) deletedItemsManager.shutdown()
+        if (::updateChecker.isInitialized) updateChecker.stop()
+        metrics?.shutdown()
+        if (::messageManager.isInitialized) {
+            messageManager.logInfo("log_plugin_disabled")
+            messageManager.logInfo("log_plugin_goodbye")
+        }
     }
 }
